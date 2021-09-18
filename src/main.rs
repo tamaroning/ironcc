@@ -9,6 +9,7 @@ fn main() {
 
     if args.len() < 2 {
         version::show_version();
+        version::show_usage();
     } else {
         let input_file_name = &args[1];
         let mut input_file = File::open(input_file_name).expect("File not found");
