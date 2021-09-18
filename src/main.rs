@@ -1,4 +1,5 @@
 mod version;
+mod lexer;
 
 use std::env;
 use std::fs::File;
@@ -11,13 +12,18 @@ fn main() {
         version::show_version();
         version::show_usage();
     } else {
-        let input_file_name = &args[1];
-        let mut input_file = File::open(input_file_name).expect("File not found");
+        let input_file_path = args[1].clone();
+        let mut input_file = File::open(input_file_path.clone()).expect("File not found");
 
-        let mut string = String::new();
-        input_file.read_to_string(&mut string).expect("Couldn't open the file");
+        let mut content = String::new();
+        input_file.read_to_string(&mut content).expect("Couldn't open the file");
 
-        println!("content: {}", string);
+        let mut lexer = lexer::Lexer::new(input_file_path.clone(), content.as_str());
 
+        // test
+        lexer.read_token();
+        lexer.read_token();
+        lexer.read_token();
+        println!("{}", lexer.get_filepath());
     }
 }
