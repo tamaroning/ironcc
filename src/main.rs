@@ -21,9 +21,17 @@ fn main() {
         let mut lexer = lexer::Lexer::new(input_file_path.clone(), content.as_str());
 
         // test
-        lexer.read_token();
-        lexer.read_token();
-        lexer.read_token();
-        println!("{}", lexer.get_filepath());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+        println!("{:?}", lexer.read_token());
+
     }
 }
