@@ -22,15 +22,22 @@ pub struct Lexer<'a> {
     cur_line: u32,
     filepath: String,
     peek: iter::Peekable<str::Chars<'a>>,
+    peek_pos: u32, 
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(path: String, input: &'a str) -> Lexer<'a> {
         Lexer {
-            cur_line: 1,
+            cur_line: 0,
             filepath: path,
             peek: input.chars().peekable(),
+            peek_pos: 0,
         }
+    }
+
+    pub fn peek_next(&mut self) -> Option<char> {
+        self.peek_pos += 1;
+        self.peek.next()
     }
 
     pub fn get_filepath(&self) -> String {
@@ -38,7 +45,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn read_symbol(&mut self) -> Token {
-        let c = self.peek.next();
+        let c = self.peek_next();
         // one character symbol
         let mut sym = String::new();
         sym.push(c.unwrap());
@@ -46,7 +53,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn read_newline(&mut self) -> Token {
-        self.peek.next();
+        self.peek_next();
         self.cur_line += 1;
         Token { kind: TokenKind::NewLine, val: "".to_string(), line: self.cur_line }
     }
@@ -61,7 +68,7 @@ impl<'a> Lexer<'a> {
                 },
                 _ => break,
             }
-            self.peek.next();
+            self.peek_next();
         }
         Token { kind: TokenKind::Ident, val: ident, line: self.cur_line }
     }
@@ -76,7 +83,7 @@ impl<'a> Lexer<'a> {
                 },
                 _ => break,
             }
-            self.peek.next();
+            self.peek_next();
         }
         Token { kind: TokenKind::Num, val: ident, line: self.cur_line }
     }
@@ -88,7 +95,7 @@ impl<'a> Lexer<'a> {
                 '+' | '-' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
-                    self.peek.next();
+                    self.peek_next();
                     self.read_token()
                 },
                 '\n' => Some(self.read_newline()),
