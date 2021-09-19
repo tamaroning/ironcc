@@ -1,5 +1,7 @@
 use std::iter;
 use std::str;
+use std::fs::File;
+use std::io::prelude::*;
 
 #[derive(Debug)]
 pub enum TokenKind {
@@ -23,6 +25,30 @@ pub struct Lexer<'a> {
     filepath: String,
     peek: iter::Peekable<str::Chars<'a>>,
     peek_pos: u32, 
+}
+
+pub fn run(filepath: String) -> Vec<Box<Token>> {
+    let mut file = File::open(filepath.clone()).expect("File not found");
+    let mut content = String::new();
+    file.read_to_string(&mut content).expect("Couldn't open the file");
+    let mut lexer = Lexer::new(filepath.clone(), content.as_str());
+    
+    let mut tokens = Vec::new();
+    loop {
+        let token = lexer.read_token();
+        match token {
+            Some(Token { kind: TokenKind::Eof, .. }) => {
+                tokens.push(Box::new(token.unwrap()));
+                break;
+            }
+            Some(_) => {
+                println!("{:?}", token.as_ref().unwrap());
+                tokens.push(Box::new(token.unwrap()));
+            },
+            _ => panic!("Lexer error"),
+        }
+    }
+    tokens
 }
 
 impl<'a> Lexer<'a> {
@@ -97,7 +123,7 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+' | '-' => Some(self.read_symbol()),
+                '+' | '-' | '*' | '/' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
                     self.peek_next();

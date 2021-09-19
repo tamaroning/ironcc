@@ -1,5 +1,6 @@
 mod version;
 mod lexer;
+mod node;
 
 use std::env;
 use std::fs::File;
@@ -12,25 +13,9 @@ fn main() {
         version::show_version();
         version::show_usage();
     } else {
-        let input_file_path = args[1].clone();
-        let mut input_file = File::open(input_file_path.clone()).expect("File not found");
-
-        let mut content = String::new();
-        input_file.read_to_string(&mut content).expect("Couldn't open the file");
-
-        let mut lexer = lexer::Lexer::new(input_file_path.clone(), content.as_str());
-
+        let filepath = args[1].clone();
         // test
-        loop {
-            let tok = lexer.read_token();
-            match tok {
-                Some(_) => println!("{:?}", tok.as_ref().unwrap()),
-                _ => panic!("Lexer error"),
-            }
-            if let Some(lexer::Token { kind: lexer::TokenKind::Eof, .. }) = tok {
-                break;
-            }
-        }
+        lexer::run(filepath);
 
     }
 }
