@@ -103,6 +103,21 @@ impl<'a> Lexer<'a> {
                     self.peek_next();
                     self.read_token()
                 },
+                // comment
+                '#' => {
+                    self.peek_next();
+                    loop {
+                        match self.peek.peek() {
+                            Some('\n') => {
+                                return Some(self.read_newline());
+                            },
+                            None => break,
+                            _ => (),
+                        }
+                        self.peek_next();
+                    }
+                    self.read_token()
+                },
                 '\n' => Some(self.read_newline()),
                 _ => None,
             },

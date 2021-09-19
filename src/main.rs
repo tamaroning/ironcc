@@ -21,17 +21,16 @@ fn main() {
         let mut lexer = lexer::Lexer::new(input_file_path.clone(), content.as_str());
 
         // test
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
-        println!("{:?}", lexer.read_token());
+        loop {
+            let tok = lexer.read_token();
+            match tok {
+                Some(_) => println!("{:?}", tok.as_ref().unwrap()),
+                _ => panic!("Lexer error"),
+            }
+            if let Some(lexer::Token { kind: lexer::TokenKind::Eof, .. }) = tok {
+                break;
+            }
+        }
 
     }
 }
