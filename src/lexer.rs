@@ -10,7 +10,7 @@ pub enum TokenKind {
     Num(f64),
     Symbol,
     Keyword,
-    NewLine,
+    NewLine, // not used
     Eof,
 }
 
@@ -144,7 +144,8 @@ impl<'a> Lexer<'a> {
                     loop {
                         match self.peek.peek() {
                             Some('\n') => {
-                                return Some(self.read_newline());
+                                self.peek_next();
+                                return self.read_token();
                             },
                             None => break,
                             _ => (),
@@ -153,7 +154,10 @@ impl<'a> Lexer<'a> {
                     }
                     self.read_token()
                 },
-                '\n' => Some(self.read_newline()),
+                '\n' => {
+                    self.read_newline();
+                    self.read_token()
+                },
                 // TODO: unexpected character error
                 _ => None,
             },
