@@ -1,6 +1,7 @@
 mod version;
 mod lexer;
 mod node;
+mod parser;
 
 use std::env;
 use std::fs::File;
@@ -15,7 +16,7 @@ fn main() {
     } else {
         let filepath = args[1].clone();
         // test
-        lexer::run(filepath);
+        parser::run(filepath);
 
     }
 }
