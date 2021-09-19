@@ -2,22 +2,29 @@ use std::iter;
 use std::str;
 use std::fs::File;
 use std::io::prelude::*;
+use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenKind {
     Ident,
-    Num,
+    Num(f64),
     Symbol,
     Keyword,
     NewLine,
     Eof,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenKind,
     pub val: String,
     pub line: u32,
+}
+
+impl Token {
+    pub fn matches(&self, s: &str) -> bool {
+        self.val.as_str() == s
+    }
 }
 
 pub struct Lexer<'a> {
@@ -27,7 +34,7 @@ pub struct Lexer<'a> {
     peek_pos: u32, 
 }
 
-pub fn run(filepath: String) -> Vec<Box<Token>> {
+pub fn run(filepath: String) -> Vec<Token> {
     let mut file = File::open(filepath.clone()).expect("File not found");
     let mut content = String::new();
     file.read_to_string(&mut content).expect("Couldn't open the file");
@@ -38,12 +45,12 @@ pub fn run(filepath: String) -> Vec<Box<Token>> {
         let token = lexer.read_token();
         match token {
             Some(Token { kind: TokenKind::Eof, .. }) => {
-                tokens.push(Box::new(token.unwrap()));
+                tokens.push(token.unwrap());
                 break;
             }
             Some(_) => {
                 println!("{:?}", token.as_ref().unwrap());
-                tokens.push(Box::new(token.unwrap()));
+                tokens.push(token.unwrap());
             },
             _ => panic!("Lexer error"),
         }
@@ -105,25 +112,27 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn read_num(&mut self) -> Token {
-        let mut ident = String::new();
+        let mut s = String::new();
         loop {
             match self.peek.peek() {
                 Some(&c) => match c {
-                    '0'..='9' => ident.push(c),
+                    '0'..='9' => s.push(c),
                     _ => break,
                 },
                 _ => break,
             }
             self.peek_next();
         }
-        Token { kind: TokenKind::Num, val: ident, line: self.cur_line }
+        // TODO: conversion error
+        let f = f64::from_str(&s).unwrap();
+        Token { kind: TokenKind::Num(f), val: s, line: self.cur_line }
     }
 
     pub fn read_token(&mut self) -> Option<Token> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+' | '-' | '*' | '/' => Some(self.read_symbol()),
+                '+' | '-' | '*' | '/' | '(' | ')' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
                     self.peek_next();
@@ -145,6 +154,7 @@ impl<'a> Lexer<'a> {
                     self.read_token()
                 },
                 '\n' => Some(self.read_newline()),
+                // TODO: unexpected character error
                 _ => None,
             },
             // TODO: None always means Eof?
