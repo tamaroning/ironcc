@@ -58,19 +58,24 @@ impl<'a> Lexer<'a> {
         Token { kind: TokenKind::NewLine, val: "".to_string(), line: self.cur_line }
     }
 
-    pub fn read_ident(&mut self) -> Token {
-        let mut ident = String::new();
+    // 
+    pub fn read_string_token(&mut self) -> Token {
+        let mut string = String::new();
         loop {
             match self.peek.peek() {
                 Some(&c) => match c {
-                    'a'..='z' | 'A'..='Z' | '0'..='9' => ident.push(c),
+                    'a'..='z' | 'A'..='Z' | '0'..='9' => string.push(c),
                     _ => break,
                 },
                 _ => break,
             }
             self.peek_next();
         }
-        Token { kind: TokenKind::Ident, val: ident, line: self.cur_line }
+        let tk = match string.as_str() {
+            "def" | "extern" => TokenKind::Keyword,
+            _ => TokenKind::Ident,
+        };
+        Token { kind: tk, val: string, line: self.cur_line }
     }
 
     pub fn read_num(&mut self) -> Token {
@@ -91,7 +96,7 @@ impl<'a> Lexer<'a> {
     pub fn read_token(&mut self) -> Option<Token> {
         match self.peek.peek() {
             Some(&c) => match c {
-                'a'..='z' | 'A'..='Z' => Some(self.read_ident()),
+                'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
                 '+' | '-' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
