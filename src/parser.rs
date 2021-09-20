@@ -3,7 +3,7 @@ use crate::node;
 
 use lexer::Token;
 use lexer::TokenKind;
-use node::{AST, BinaryOpAST, BinaryOp};
+use node::{AST, BinaryOp};
 
 pub fn run(filepath: String) -> Vec<AST> {
     let tokens = lexer::run(filepath.clone());
@@ -80,17 +80,17 @@ impl Parser {
         let mut ast = self.read_relational();
         loop {
             if self.consume("==") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_relational()),
-                    op: BinaryOp::Eq,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_relational()),
+                    BinaryOp::Eq,
+                );
             } else if self.consume("!=") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_relational()),
-                    op: BinaryOp::Ne,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_relational()),
+                    BinaryOp::Ne,
+                );
             } else {
                 break;
             }
@@ -102,29 +102,29 @@ impl Parser {
         let mut ast = self.read_add();
         loop {
             if self.consume("<") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_add()),
-                    op: BinaryOp::Lt,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_add()),
+                    BinaryOp::Lt,
+                );
             } else if self.consume("<=") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_add()),
-                    op: BinaryOp::Le,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_add()),
+                    BinaryOp::Le,
+                );
             } else if self.consume(">") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(self.read_add()),
-                    rhs: Box::new(ast),
-                    op: BinaryOp::Lt,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(self.read_add()),
+                    Box::new(ast),
+                    BinaryOp::Lt,
+                );
             } else if self.consume(">=") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(self.read_add()),
-                    rhs: Box::new(ast),
-                    op: BinaryOp::Le,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(self.read_add()),
+                    Box::new(ast),
+                    BinaryOp::Le,
+                );
             } else {
                 break;
             }
@@ -136,17 +136,17 @@ impl Parser {
         let mut ast = self.read_mul();
         loop {
             if self.consume("+") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_mul()),
-                    op: BinaryOp::Add,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_mul()),
+                    BinaryOp::Add,
+                );
             } else if self.consume("-") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_mul()),
-                    op: BinaryOp::Sub,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_mul()),
+                    BinaryOp::Sub,
+                );
             } else {
                 break;
             }
@@ -158,17 +158,17 @@ impl Parser {
         let mut ast = self.read_unary();
         loop {
             if self.consume("*") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_unary()),
-                    op: BinaryOp::Mul,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_unary()),
+                    BinaryOp::Mul,
+                );
             } else if self.consume("/") {
-                ast = AST::BinaryOp(BinaryOpAST{
-                    lhs: Box::new(ast),
-                    rhs: Box::new(self.read_unary()),
-                    op: BinaryOp::Div,
-                });
+                ast = AST::BinaryOp(
+                    Box::new(ast),
+                    Box::new(self.read_unary()),
+                    BinaryOp::Div,
+                );
             } else {
                 break;
             }
@@ -178,11 +178,11 @@ impl Parser {
 
     fn read_unary(&mut self) -> AST {
         if self.consume("-") {
-            return AST::BinaryOp(BinaryOpAST{
-                lhs: Box::new(AST::Num(0.0)),
-                rhs: Box::new(self.read_primary()),
-                op: BinaryOp::Sub,
-            });
+            return AST::BinaryOp(
+                Box::new(AST::Num(0.0)),
+                Box::new(self.read_primary()),
+                BinaryOp::Sub,
+            );
         }
         self.consume("+");
         self.read_primary()
