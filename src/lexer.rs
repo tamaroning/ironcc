@@ -26,6 +26,21 @@ impl Token {
     pub fn matches(&self, s: &str) -> bool {
         self.val.as_str() == s
     }
+
+    pub fn is_eof(&self) -> bool {
+        return match self.kind {
+            TokenKind::Eof => true,
+            _ => false,
+        };
+    }
+
+    pub fn is_ident(&self) -> bool {
+        return match self.kind {
+            TokenKind::Ident => true,
+            _ => false,
+        };
+    }
+
 }
 
 pub struct Lexer<'a> {
@@ -152,7 +167,7 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+' | '-' | '*' | '/' | '(' | ')' | '=' | '<' | '>' | '!' => Some(self.read_symbol()),
+                '+' | '-' | '*' | '/' | '(' | ')' | '=' | '<' | '>' | '!' | ';' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
                     self.peek_next();
