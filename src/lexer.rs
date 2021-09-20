@@ -65,7 +65,6 @@ pub fn run(filepath: String) -> Vec<Token> {
                 break;
             }
             Some(_) => {
-                println!("{:?}", token.as_ref().unwrap());
                 tokens.push(token.unwrap());
             },
             _ => panic!("Lexer error"),

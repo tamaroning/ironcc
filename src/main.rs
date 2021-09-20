@@ -16,7 +16,16 @@ fn main() {
     } else {
         let filepath = args[1].clone();
         // test
-        parser::run(filepath);
-
+        // tokenize
+        let tokens = lexer::run(filepath.clone());
+        for tok in &tokens {
+            println!("{:?}", tok);
+        }
+        // parse
+        let nodes = parser::run(filepath.clone(), tokens);
+        for node in &nodes {
+            println!("{:?}", node);
+        }
+        
     }
 }

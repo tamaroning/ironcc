@@ -5,17 +5,10 @@ use lexer::Token;
 use lexer::TokenKind;
 use node::{AST, BinaryOp};
 
-pub fn run(filepath: String) -> Vec<AST> {
-    let tokens = lexer::run(filepath.clone());
-    let nodes = Vec::new();
-    
+pub fn run(filepath: String, tokens: Vec<Token>) -> Vec<AST> {
     let mut parser = Parser::new(filepath, tokens);
     let ast = parser.read_toplevel();
-
-    // test
-    println!("{:?}", ast);
-
-    nodes
+    ast
 }
 
 pub struct Parser {
