@@ -73,6 +73,66 @@ impl Parser {
     }
 
     fn read_expr(&mut self) -> AST {
+        self.read_equality()
+    }
+
+    fn read_equality(&mut self) -> AST {
+        let mut ast = self.read_relational();
+        loop {
+            if self.consume("==") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(ast),
+                    rhs: Box::new(self.read_relational()),
+                    op: BinaryOp::Eq,
+                });
+            } else if self.consume("!=") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(ast),
+                    rhs: Box::new(self.read_relational()),
+                    op: BinaryOp::Ne,
+                });
+            } else {
+                break;
+            }
+        }
+        ast
+    }
+
+    fn read_relational(&mut self) -> AST {
+        let mut ast = self.read_add();
+        loop {
+            if self.consume("<") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(ast),
+                    rhs: Box::new(self.read_add()),
+                    op: BinaryOp::Lt,
+                });
+            } else if self.consume("<=") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(ast),
+                    rhs: Box::new(self.read_add()),
+                    op: BinaryOp::Le,
+                });
+            } else if self.consume(">") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(self.read_add()),
+                    rhs: Box::new(ast),
+                    op: BinaryOp::Lt,
+                });
+            } else if self.consume(">=") {
+                ast = AST::BinaryOp(BinaryOpAST{
+                    lhs: Box::new(self.read_add()),
+                    rhs: Box::new(ast),
+                    op: BinaryOp::Le,
+                });
+            } else {
+                break;
+            }
+        }
+        ast
+    }
+
+    fn read_add(&mut self) -> AST {
         let mut ast = self.read_mul();
         loop {
             if self.consume("+") {

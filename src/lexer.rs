@@ -3,6 +3,7 @@ use std::str;
 use std::fs::File;
 use std::io::prelude::*;
 use std::str::FromStr;
+use std::iter::FromIterator;
 
 #[derive(Debug, Clone)]
 pub enum TokenKind {
@@ -31,7 +32,7 @@ pub struct Lexer<'a> {
     cur_line: u32,
     filepath: String,
     peek: iter::Peekable<str::Chars<'a>>,
-    peek_pos: u32, 
+    peek_pos: usize, 
 }
 
 pub fn run(filepath: String) -> Vec<Token> {
@@ -73,15 +74,34 @@ impl<'a> Lexer<'a> {
         self.peek.next()
     }
 
+    pub fn peek_skip(&mut self, n: usize) {
+        for _ in 0..n {
+            self.peek_next();
+        }
+    }
+
+    pub fn starts_with(&self, s: &str) -> bool {
+        //println!("cmp");
+        //println!("{:?}",s.to_string());
+        //println!("{:?}", String::from_iter(self.peek.clone().take(s.len())));
+        String::from_iter(self.peek.clone().take(s.len())) == s.to_string()
+    }
+
     pub fn get_filepath(&self) -> String {
         self.filepath.clone()
     }
 
     pub fn read_symbol(&mut self) -> Token {
-        let c = self.peek_next();
-        // one character symbol
-        let mut sym = String::new();
-        sym.push(c.unwrap());
+        // multicharacter symbols
+        let ops = vec!["==", "!=", "<=", ">="];
+        for op in ops {
+            if self.starts_with(op) {
+                self.peek_skip(2);
+                return Token { kind: TokenKind::Symbol, val: op.to_string(), line: self.cur_line };
+            }
+        }
+        // single character symbols
+        let sym = self.peek_next().unwrap().to_string();
         Token { kind: TokenKind::Symbol, val: sym, line: self.cur_line }
     }
 
@@ -91,7 +111,7 @@ impl<'a> Lexer<'a> {
         Token { kind: TokenKind::NewLine, val: "".to_string(), line: self.cur_line }
     }
 
-    // 
+    // ident, keyword
     pub fn read_string_token(&mut self) -> Token {
         let mut string = String::new();
         loop {
@@ -132,7 +152,7 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+' | '-' | '*' | '/' | '(' | ')' => Some(self.read_symbol()),
+                '+' | '-' | '*' | '/' | '(' | ')' | '=' | '<' | '>' | '!' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
                     self.peek_next();

@@ -18,6 +18,10 @@ pub enum BinaryOp {
     Sub,
     Mul,
     Div,
+    Eq, // ==
+    Ne, // !=
+    Lt, // <
+    Le, // <=
 }
 
 impl BinaryOpAST {
