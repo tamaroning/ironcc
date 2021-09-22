@@ -7,10 +7,11 @@ use std::iter::FromIterator;
 
 #[derive(Debug, Clone)]
 pub enum TokenKind {
-    Ident,
-    Num(f64),
+    IntNum,
+    FloatNum,
     Symbol,
     Keyword,
+    Ident,
     NewLine, // not used
     Eof,
 }
@@ -154,9 +155,7 @@ impl<'a> Lexer<'a> {
             }
             self.peek_next();
         }
-        // TODO: conversion error
-        let f = f64::from_str(&s).unwrap();
-        Token { kind: TokenKind::Num(f), val: s, line: self.cur_line }
+        Token { kind: TokenKind::IntNum, val: s, line: self.cur_line }
     }
 
     pub fn read_token(&mut self) -> Option<Token> {

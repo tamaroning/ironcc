@@ -2,7 +2,7 @@ mod version;
 mod lexer;
 mod node;
 mod parser;
-mod codegen;
+//mod codegen;
 
 use std::env;
 
@@ -26,9 +26,11 @@ fn main() {
             println!("{:?}", node);
         }
 
+        /*
         unsafe {
             let mut codegen = codegen::Codegen::new("mod");
             codegen.gen();
         }
+        */
     }
 }

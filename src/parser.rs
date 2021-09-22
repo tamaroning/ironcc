@@ -61,16 +61,12 @@ impl Parser {
         false
     }
 
-    // toplevel = definition | external | expr | ;
+    // toplevel = expr | ;
     fn read_toplevel(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
         while !self.cur().unwrap().is_eof() {
             if self.consume(";") {
                 continue;
-            } else if self.cur().unwrap().matches("def") {
-                ret.push(self.read_definition());
-            } else if self.cur().unwrap().matches("extern") {
-                ret.push(self.read_external());
             } else {
                 ret.push(self.read_expr());
             }
@@ -185,7 +181,7 @@ impl Parser {
     fn read_unary(&mut self) -> AST {
         if self.consume("-") {
             return AST::BinaryOp(
-                Box::new(AST::Num(0.0)),
+                Box::new(AST::Int(0)),
                 Box::new(self.read_primary()),
                 BinaryOp::Sub,
             );
@@ -195,71 +191,25 @@ impl Parser {
     }
 
     // primary ::= ( expr )
-    //           | ident_expr
     //           | num
     fn read_primary(&mut self) -> AST {
         if self.consume("(") {
             let ast = self.read_expr();
             self.consume(")");
             return ast;
-        } else if self.cur().unwrap().is_ident() {
-            return self.read_ident_expr();
         } else{
             return self.read_num();
         }
     }
 
-    // ident_expr ::= id ( expr )
-    //              | id
-    fn read_ident_expr(&mut self) -> AST {
-        if self.peek().unwrap().matches("(") {
-            let ident = self.read_id();
-            self.consume("(");
-            let mut v = Vec::new();
-            while !self.consume(")") {
-                v.push(self.read_expr());
-            }
-            return AST::FuncCall(ident, v);
-        }
-        let ident = self.next().val;
-
-        AST::Variable(ident)
-    }
-
     fn read_num(&mut self) -> AST {
-        match self.next().kind {
-            TokenKind::Num(f) => AST::Num(f),
+        match self.next() {
+            Token{ kind: TokenKind::IntNum, val: n, ..}  => AST::Int(n.parse::<i32>().unwrap()),
             _ => panic!("Numerical literal is expected"),
         } 
     }
 
-    // definition ::= def prototype expr
-    fn read_definition(&mut self) -> AST {
-        self.consume("def");
-        let (id, args) = self.read_prototype();
-        let expr = self.read_expr();
-        AST::Def(id, args , Box::new(expr))
-    }
-
-    // prototype ::= id ( id* )
-    fn read_prototype(&mut self) -> (String, Vec<String>) {
-        let id = self.read_id();
-        let mut v = Vec::new();
-        self.consume("(");
-        while !self.consume(")") {
-            v.push(self.read_id());
-        }
-        (id, v)
-    }
-
     fn read_id(&mut self) -> String {
         self.next().val
-    }
-
-    // external ::= extern prototype
-    fn read_external(&mut self) -> AST {
-        self.consume("extern");
-        let (id, args) = self.read_prototype();
-        AST::Extern(id, args)
     }
 }

@@ -1,11 +1,8 @@
 #[derive(Debug, Clone)]
 pub enum AST {
-    Num(f64),
+    Int(i32),
+    Float(f64),
     BinaryOp(Box<AST>, Box<AST>, BinaryOp),
-    Variable(String),
-    FuncCall(String, Vec<AST>),
-    Def(String, Vec<String>, Box<AST>),
-    Extern(String, Vec<String>),
 }
 
 #[derive(Debug, Clone)]
