@@ -83,6 +83,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn get_filepath(&self) -> String {
+        self.filepath.clone()
+    }
+
     pub fn peek_next(&mut self) -> Option<char> {
         self.peek_pos += 1;
         self.peek.next()
@@ -95,14 +99,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn starts_with(&self, s: &str) -> bool {
-        //println!("cmp");
-        //println!("{:?}",s.to_string());
-        //println!("{:?}", String::from_iter(self.peek.clone().take(s.len())));
         String::from_iter(self.peek.clone().take(s.len())) == s.to_string()
-    }
-
-    pub fn get_filepath(&self) -> String {
-        self.filepath.clone()
     }
 
     pub fn read_symbol(&mut self) -> Token {
