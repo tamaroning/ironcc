@@ -93,9 +93,17 @@ impl<'a> Lexer<'a> {
         self.peek.next()
     }
 
-    pub fn peek_skip(&mut self, n: usize) {
+    // advance by n characters
+    pub fn advance_by(&mut self, n: usize) {
         for _ in 0..n {
             self.peek_next();
+        }
+    }
+
+    // read forward expected string
+    pub fn skip_token(&mut self, s: &str) {
+        if self.read_token().unwrap().val != s {
+            panic!("Expected {}", s);
         }
     }
 
@@ -108,7 +116,7 @@ impl<'a> Lexer<'a> {
         let ops = vec!["==", "!=", "<=", ">="];
         for op in ops {
             if self.starts_with(op) {
-                self.peek_skip(2);
+                self.advance_by(2);
                 return Token { kind: TokenKind::Symbol, val: op.to_string(), line: self.cur_line };
             }
         }
@@ -118,7 +126,6 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn read_newline(&mut self) -> Token {
-        self.peek_next();
         self.cur_line += 1;
         Token { kind: TokenKind::NewLine, val: "".to_string(), line: self.cur_line }
     }
@@ -137,7 +144,7 @@ impl<'a> Lexer<'a> {
             self.peek_next();
         }
         let tk = match string.as_str() {
-            "def" | "extern" => TokenKind::Keyword,
+            "int" => TokenKind::Keyword,
             _ => TokenKind::Ident,
         };
         Token { kind: tk, val: string, line: self.cur_line }
@@ -145,17 +152,46 @@ impl<'a> Lexer<'a> {
 
     pub fn read_num(&mut self) -> Token {
         let mut s = String::new();
+        let mut is_float = false;
         loop {
             match self.peek.peek() {
                 Some(&c) => match c {
                     '0'..='9' => s.push(c),
+                    '.' => {
+                        s.push(c);
+                        is_float = true;
+                    }
                     _ => break,
                 },
                 _ => break,
             }
             self.peek_next();
         }
-        Token { kind: TokenKind::IntNum, val: s, line: self.cur_line }
+        if is_float {
+            Token { kind: TokenKind::FloatNum, val: s, line: self.cur_line }
+        } else {
+            Token { kind: TokenKind::IntNum, val: s, line: self.cur_line }
+        }
+    }
+
+    fn read_directive(&mut self) {
+        let dir_string = self.read_token().unwrap().val;
+        if dir_string == "include" {
+            self.read_include_directive();
+        } else {
+            panic!("Unknown direvtive");
+        }
+    }
+
+    fn read_include_directive(&mut self) {
+        self.skip_token("<");
+        let mut filename = String::new();
+        while !(*self.peek.peek().unwrap() == '>') {
+            filename.push(self.peek_next().unwrap());
+        }
+        self.skip_token(">");
+        println!("include: {}", filename);
+        // TODO: implement #include here
     }
 
     pub fn read_token(&mut self) -> Option<Token> {
@@ -169,11 +205,17 @@ impl<'a> Lexer<'a> {
                     self.read_token()
                 },
                 '\n' => {
+                    self.peek_next();
                     self.read_newline();
                     self.read_token()
                 },
-                // TODO: unexpected character error
-                _ => None,
+                '#' => {
+                    self.peek_next();
+                    self.read_directive();
+                    self.read_token()
+                }
+                // TODO: unexpected character
+                _ => panic!("Unknown character {}", c),
             },
             // TODO: None always means Eof?
             _ => Some(Token{ kind: TokenKind::Eof, val: "".to_string(), line: self.cur_line }),

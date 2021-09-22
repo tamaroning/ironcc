@@ -205,6 +205,7 @@ impl Parser {
     fn read_num(&mut self) -> AST {
         match self.next() {
             Token{ kind: TokenKind::IntNum, val: n, ..}  => AST::Int(n.parse::<i32>().unwrap()),
+            Token{ kind: TokenKind::FloatNum, val: n, ..}  => AST::Float(n.parse::<f64>().unwrap()),
             _ => panic!("Numerical literal is expected"),
         } 
     }
