@@ -1,8 +1,8 @@
-mod version;
-mod lexer;
-mod node;
-mod parser;
-//mod codegen;
+extern crate ironcc;
+use ironcc::version;
+use ironcc::lexer;
+use ironcc::parser;
+use ironcc::codegen;
 
 use std::env;
 
