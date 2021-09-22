@@ -5,3 +5,4 @@ edition = "2018"
 author = ["tamaron"]
 
 [dependencies]
+llvm-sys = "120"

@@ -2,10 +2,9 @@ mod version;
 mod lexer;
 mod node;
 mod parser;
+mod codegen;
 
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,6 +25,10 @@ fn main() {
         for node in &nodes {
             println!("{:?}", node);
         }
-        
+
+        unsafe {
+            let mut codegen = codegen::Codegen::new("mod");
+            codegen.gen();
+        }
     }
 }
