@@ -13,6 +13,7 @@ use node::{AST, BinaryOps};
 pub fn run(filepath: String, tokens: Vec<Token>) -> Vec<AST> {
     let mut parser = Parser::new(filepath, tokens);
     let ast = parser.read_toplevel();
+    println!("locals: {:?}", parser.locals);
     ast
 }
 
@@ -20,7 +21,7 @@ pub struct Parser {
     filepath: String,
     pos: usize,
     tokens: Vec<Token>,
-    locals: HashMap<String, Type>,
+    pub locals: HashMap<String, Type>,
 }
 
 impl Parser {
@@ -55,6 +56,7 @@ impl Parser {
 
     pub fn next(&mut self) -> Token {
         let ret = self.cur();
+        //println!("parse {}", ret.val.clone());
         self.pos += 1;
         ret
     }
@@ -68,11 +70,11 @@ impl Parser {
         false
     }
 
-    pub fn consume_expected(&mut self, s: &str) -> bool {
+    pub fn consume_expected(&mut self, s: &str) {
         if self.cur().matches(s) {
             self.next();
         } else {
-            panic!("Unexpected token");
+            panic!("Expected {}, but found {}", s, self.cur().val);
         }
     }
 
@@ -110,12 +112,12 @@ impl Parser {
         } else if self.consume("for") {
             self.consume_expected("(");
             let init = self.read_expr_stmt();
-            let cond = AST::Nil;
+            let mut cond = AST::Nil;
             if !self.consume(";") {
                 cond = self.read_expr();
                 self.consume_expected(";");
             }
-            let step = AST::Nil;
+            let mut step = AST::Nil;
             if !self.consume(")") {
                 step = self.read_expr();
                 self.consume(")");
@@ -150,7 +152,7 @@ impl Parser {
     }
 
     fn read_declaration(&mut self) -> AST {
-        let assigns = Vec::new();
+        let mut assigns = Vec::new();
         let declspec = self.read_declspec();
         let (ty, name) = self.read_declarator(declspec.clone());
         self.new_lvar(name.clone(), ty.clone());
@@ -158,11 +160,11 @@ impl Parser {
         if self.consume("=") {
             let lhs = AST::Variable(name);
             let rhs = self.read_expr();
-            let assign = AST::Assign(
+            let assign = AST::BinaryOp(
                 Box::new(lhs), Box::new(rhs), BinaryOps::Assign);
             assigns.push(assign);
         }
-        
+
         while self.consume(",") {
             let (ty, name) = self.read_declarator(declspec.clone());
             self.new_lvar(name.clone(), ty.clone());
@@ -170,7 +172,7 @@ impl Parser {
             if self.consume("=") {
                 let lhs = AST::Variable(name);
                 let rhs = self.read_expr();
-                let assign = AST::Assign(
+                let assign = AST::BinaryOp(
                     Box::new(lhs), Box::new(rhs), BinaryOps::Assign);
                 assigns.push(assign);
             }
@@ -180,9 +182,9 @@ impl Parser {
     }
 
     fn read_declspec(&mut self) -> Type {
-        match &self.cur().val {
+        match self.next().val.as_str() {
             "int" => return Type::Int,
-            _ => panic("Unknown type"),
+            _ => panic!("Unknown type"),
         }
     }
 
@@ -212,7 +214,7 @@ impl Parser {
         let mut ret = self.read_equality();
         if self.consume("=") {
             let rhs = self.read_assign();
-            ret = AST::BinaryOp(ret, rhs, BinaryOps::Assign); 
+            ret = AST::BinaryOp(Box::new(ret), Box::new(rhs), BinaryOps::Assign); 
         }
         ret
     }
@@ -319,13 +321,13 @@ impl Parser {
 
     fn read_unary(&mut self) -> AST {
         if self.consume("+") {
-            return AST::UnaryOp(self.read_unary(), UnaryOps::Plus);
+            return AST::UnaryOp(Box::new(self.read_unary()), UnaryOps::Plus);
         } else if self.consume("-") {
-            return AST::UnaryOp(self.read_unary(), UnaryOps::Minus);
+            return AST::UnaryOp(Box::new(self.read_unary()), UnaryOps::Minus);
         } else if self.consume("&") {
-            return AST::UnaryOp(self.read_unary(), UnaryOps::Addr);
+            return AST::UnaryOp(Box::new(self.read_unary()), UnaryOps::Addr);
         } else if self.consume("*") {
-            return AST::UnaryOp(self.read_unary(), UnaryOps::Deref);
+            return AST::UnaryOp(Box::new(self.read_unary()), UnaryOps::Deref);
         }
         self.read_primary()
     }
@@ -336,7 +338,7 @@ impl Parser {
             self.consume_expected(")");
             return ast;
         } else if self.cur().is_ident() {
-            return AST::Variable(self.cur().val);
+            return AST::Variable(self.read_ident());
         }else{
             return self.read_num();
         }

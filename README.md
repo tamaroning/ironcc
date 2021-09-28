@@ -9,8 +9,8 @@ stmt = "return" expr ";"
         | "if" "(" expr ")" stmt ("else" stmt)?
         | "for" "(" expr-stmt expr? ";" expr? ")" stmt
         | "while" "(" expr ")" stmt
-        | expr-stmt
         | "{" compound-stmt
+        | expr-stmt
 
 compound-stmt = (declaration | stmt)* "}"
 

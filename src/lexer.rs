@@ -2,7 +2,6 @@ use std::iter;
 use std::str;
 use std::fs::File;
 use std::io::prelude::*;
-use std::str::FromStr;
 use std::iter::FromIterator;
 
 #[derive(Debug, Clone)]
@@ -89,6 +88,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn peek_next(&mut self) -> Option<char> {
+        //println!("lex '{}'", self.peek.peek().unwrap());
         self.peek_pos += 1;
         self.peek.next()
     }
@@ -198,9 +198,9 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+'|'-'|'*'|'/'|'('|')'|'='|'<'|'>'|'!'|'&'|','|';' => Some(self.read_symbol()),
+                '+'|'-'|'*'|'/'|'('|')'|'='|'<'|'>'|'!'|'&'|','|';'|'{'|'}' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
-                ' ' | '\t' => {
+                ' ' | '\t' | '\r' => {
                     self.peek_next();
                     self.read_token()
                 },
@@ -215,7 +215,7 @@ impl<'a> Lexer<'a> {
                     self.read_token()
                 }
                 // TODO: unexpected character
-                _ => panic!("Unknown character {}", c),
+                _ => panic!("Unknown character: '{}' code: {}", c, c as u8),
             },
             // TODO: None always means Eof?
             _ => Some(Token{ kind: TokenKind::Eof, val: "".to_string(), line: self.cur_line }),
