@@ -19,7 +19,7 @@ mul = unary (("*"|"/") unary)*
 
 unary = ("+"|"-")? primary
 
-primary = "(" expr ")" | <num>
+primary = "(" expr ")" | <ident> | <num>
 
 ```
 

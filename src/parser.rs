@@ -207,7 +207,9 @@ impl Parser {
             let ast = self.read_expr();
             self.consume_expected(")");
             return ast;
-        } else{
+        } else if self.cur().is_ident() {
+            return AST::Variable(self.cur().val);
+        }else{
             return self.read_num();
         }
     }
@@ -218,9 +220,5 @@ impl Parser {
             Token{ kind: TokenKind::FloatNum, val: n, ..}  => AST::Float(n.parse::<f64>().unwrap()),
             _ => panic!("Numerical literal is expected"),
         } 
-    }
-
-    fn read_id(&mut self) -> String {
-        self.next().val
     }
 }

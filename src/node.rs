@@ -3,6 +3,7 @@ pub enum AST {
     Int(i32),
     Float(f64),
     BinaryOp(Box<AST>, Box<AST>, BinaryOp),
+    Variable(String),
 }
 
 #[derive(Debug, Clone)]
