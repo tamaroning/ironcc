@@ -31,47 +31,56 @@ impl Parser {
     }
 
     // for LL(1)
-    pub fn cur(&self) -> Option<Token> {
+    pub fn cur(&self) -> Token {
         if self.pos < self.tokens.len() {
-            return Some(self.tokens[self.pos].clone());
+            return self.tokens[self.pos].clone();
         }
-        None
+        panic!("Couldn't read a token");
     }
 
     // for LL(2)
-    pub fn peek(&self) -> Option<Token> {
+    pub fn peek(&self) -> Token {
         if self.pos < self.tokens.len() {
-            return Some(self.tokens[self.pos + 1].clone());
+            return self.tokens[self.pos + 1].clone();
         }
-        None
+        panic!("Couldn't read a token");
     }
 
     pub fn next(&mut self) -> Token {
-        let ret = self.cur().unwrap();
+        let ret = self.cur();
         self.pos += 1;
         ret
     }
 
     // read forward
     pub fn consume(&mut self, s: &str) -> bool {
-        if self.cur().unwrap().matches(s) {
+        if self.cur().matches(s) {
             self.next();
             return true;
         }
         false
     }
 
-    // toplevel = expr | ;
+    pub fn consume_expected(&mut self, s: &str) -> bool {
+        if self.cur().matches(s) {
+            self.next();
+        } else {
+            panic!("Unexpected token");
+        }
+    }
+
+    // toplevel = exprstmt*
     fn read_toplevel(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
-        while !self.cur().unwrap().is_eof() {
-            if self.consume(";") {
-                continue;
-            } else {
-                ret.push(self.read_expr());
-            }
+        while !self.cur().is_eof() {
+           ret.push(self.read_exprstmt());
         }
         ret
+    }
+
+    fn read_exprstmt(&mut self) -> AST {
+        let expr = self.read_expr();
+        self.consume_expected(";");
     }
 
     fn read_expr(&mut self) -> AST {
@@ -195,7 +204,7 @@ impl Parser {
     fn read_primary(&mut self) -> AST {
         if self.consume("(") {
             let ast = self.read_expr();
-            self.consume(")");
+            self.consume_expected(")");
             return ast;
         } else{
             return self.read_num();
