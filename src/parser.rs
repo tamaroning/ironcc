@@ -89,9 +89,20 @@ impl Parser {
     fn read_toplevel(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
         while !self.cur().is_eof() {
-           ret.push(self.read_stmt());
+           ret.push(self.read_func_def());
         }
         ret
+    }
+
+    fn read_func_def(&mut self) -> AST {
+        self.locals = HashMap::new();
+        let ty = self.read_declspec();
+        let (ty, name) = self.read_declarator(ty);
+        let param_names = Vec::new();
+        self.consume_expected("{");
+        let body = self.read_compound_stmt();
+
+        AST::FuncDef(ty, param_names, name, Box::new(body), self.locals.clone())
     }
 
     fn read_stmt(&mut self) -> AST {
@@ -358,7 +369,7 @@ impl Parser {
             }
             self.consume_expected(")");
         }
-        AST::Funccall(name, args)
+        AST::FuncCall(name, args)
     }
 
     fn read_num(&mut self) -> AST {

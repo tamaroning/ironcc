@@ -1,9 +1,11 @@
 # ironcc
-a toy compiler written in Rust
+A toy C compiler written in Rust
 
 # Syntax
 ```
-topLevel = stmt*
+program = func-def*
+
+func-def = declspec decalarator "{" compound-stmt
 
 stmt = "return" expr ";"
         | "if" "(" expr ")" stmt ("else" stmt)?

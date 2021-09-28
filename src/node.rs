@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use crate::types::Type;
+
 #[derive(Debug, Clone)]
 pub enum AST {
     Int(i32),
@@ -11,7 +14,8 @@ pub enum AST {
     If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
     For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body
     While(Box<AST>, Box<AST>), // cond, body
-    Funccall(String, Vec<AST>), // func-name, args
+    FuncCall(String, Vec<AST>), // func-name, args
+    FuncDef(Type, Vec<String>, String, Box<AST>, HashMap<String, Type>), // type, arg names, func name, body 
     Nil, // forのcond、ifのelse、expr-stmtのexprにおいて式や文などが存在しないときに用いる
 }
 
