@@ -88,6 +88,16 @@ impl Parser {
             let expr = self.read_expr();
             self.consume_expected(";");
             return AST::Return(Box::new(expr));
+        } else if self.consume("if") {
+            self.consume_expected("(");
+            let cond = self.read_expr();
+            self.consume_expected(")");
+            let then = self.read_stmt();
+            let mut els = AST::Block(Vec::new());
+            if self.consume("else") {
+                els = self.read_stmt();
+            }
+            return AST::If(Box::new(cond), Box::new(then), Box::new(els));
         } else if self.consume("{") {
             return self.read_compound_stmt();
         } else {

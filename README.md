@@ -6,6 +6,7 @@ a toy compiler written in Rust
 topLevel = stmt*
 
 stmt = "return" expr ";"
+        | "if" "(" expr ")" stmt ("else" stmt)?
         | expr-stmt
         | "{" compound-stmt
 

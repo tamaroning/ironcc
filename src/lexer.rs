@@ -144,7 +144,7 @@ impl<'a> Lexer<'a> {
             self.peek_next();
         }
         let tk = match string.as_str() {
-            "int" => TokenKind::Keyword,
+            "if"|"else" => TokenKind::Keyword,
             _ => TokenKind::Ident,
         };
         Token { kind: tk, val: string, line: self.cur_line }

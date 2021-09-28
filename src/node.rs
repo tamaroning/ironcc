@@ -7,6 +7,7 @@ pub enum AST {
     Return(Box<AST>),
     ExprStmt(Box<AST>),
     Block(Vec<AST>),
+    If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
 }
 
 #[derive(Debug, Clone)]
