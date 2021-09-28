@@ -3,11 +3,19 @@ a toy compiler written in Rust
 
 # Syntax
 ```
-topLevel = expr-stmt*
+topLevel = stmt*
 
-expr-stmt = expr ";"
+stmt = "return" expr ";"
+        | expr-stmt
+        | "{" compound-stmt
 
-expr = equality
+compound-stmt = stmt* "}"
+
+expr-stmt = expr? ";"
+
+expr = assign
+
+assign = equality ("=" assign)?
 
 equality = relational ("=="|"!=" relational)*
 

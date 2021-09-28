@@ -4,6 +4,9 @@ pub enum AST {
     Float(f64),
     BinaryOp(Box<AST>, Box<AST>, BinaryOp),
     Variable(String),
+    Return(Box<AST>),
+    ExprStmt(Box<AST>),
+    Block(Vec<AST>),
 }
 
 #[derive(Debug, Clone)]
@@ -16,6 +19,7 @@ pub enum BinaryOp {
     Ne, // !=
     Lt, // <
     Le, // <=
+    Assign,
 }
 
 impl AST {

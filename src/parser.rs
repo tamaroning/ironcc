@@ -1,3 +1,5 @@
+use std::fmt::Binary;
+
 use crate::lexer;
 use crate::node;
 
@@ -76,18 +78,52 @@ impl Parser {
     fn read_toplevel(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
         while !self.cur().is_eof() {
-           ret.push(self.read_exprstmt());
+           ret.push(self.read_stmt());
         }
         ret
     }
 
-    fn read_exprstmt(&mut self) -> AST {
-        let expr = self.read_expr();
-        self.consume_expected(";");
+    fn read_stmt(&mut self) -> AST {
+        if self.consume("return") {
+            let expr = self.read_expr();
+            self.consume_expected(";");
+            return AST::Return(Box::new(expr));
+        } else if self.consume("{") {
+            return self.read_compound_stmt();
+        } else {
+            return self.read_expr_stmt();
+        }
+    }
+
+    fn read_compound_stmt(&mut self) -> AST {
+        let mut v = Vec::new();
+        while !self.consume("}") {
+            v.push(self.read_stmt());
+        }
+        AST::Block(v)
+    }
+
+    fn read_expr_stmt(&mut self) -> AST {
+        if self.consume(";") {
+            return AST::Block(Vec::new());
+        } else {
+            let expr = self.read_expr();
+            self.consume_expected(";");
+            return AST::ExprStmt(Box::new(expr));
+        }
     }
 
     fn read_expr(&mut self) -> AST {
-        self.read_equality()
+        self.read_assign()
+    }
+
+    fn read_assign(&mut self) -> AST {
+        let mut ret = self.read_equality();
+        if self.consume("=") {
+            let rhs = self.read_assign();
+            ret = AST::BinaryOp(ret, rhs, BinaryOp::Assign); 
+        }
+        ret
     }
 
     fn read_equality(&mut self) -> AST {
