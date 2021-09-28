@@ -1,8 +1,10 @@
 use std::fmt::Binary;
+use std::collections::HashMap;
 
 use crate::lexer;
 use crate::node;
 use crate::node::UnaryOps;
+use crate::types::Type;
 
 use lexer::Token;
 use lexer::TokenKind;
@@ -18,6 +20,7 @@ pub struct Parser {
     filepath: String,
     pos: usize,
     tokens: Vec<Token>,
+    locals: HashMap<String, Type>,
 }
 
 impl Parser {
@@ -26,6 +29,7 @@ impl Parser {
             filepath: path,
             pos: 0,
             tokens: tok,
+            locals: HashMap::new(),
         }
     }
 
@@ -70,6 +74,10 @@ impl Parser {
         } else {
             panic!("Unexpected token");
         }
+    }
+
+    pub fn new_lvar(&mut self, name: String, ty: Type) {
+        self.locals.insert(name, ty);
     }
 
     //
@@ -130,9 +138,60 @@ impl Parser {
     fn read_compound_stmt(&mut self) -> AST {
         let mut v = Vec::new();
         while !self.consume("}") {
-            v.push(self.read_stmt());
+            let ast;
+            if self.cur().matches("int") {
+                ast = self.read_declaration();
+            } else {
+                ast = self.read_stmt();
+            }
+            v.push(ast);
         }
         AST::Block(v)
+    }
+
+    fn read_declaration(&mut self) -> AST {
+        let assigns = Vec::new();
+        let declspec = self.read_declspec();
+        let (ty, name) = self.read_declarator(declspec.clone());
+        self.new_lvar(name.clone(), ty.clone());
+
+        if self.consume("=") {
+            let lhs = AST::Variable(name);
+            let rhs = self.read_expr();
+            let assign = AST::Assign(
+                Box::new(lhs), Box::new(rhs), BinaryOps::Assign);
+            assigns.push(assign);
+        }
+        
+        while self.consume(",") {
+            let (ty, name) = self.read_declarator(declspec.clone());
+            self.new_lvar(name.clone(), ty.clone());
+            
+            if self.consume("=") {
+                let lhs = AST::Variable(name);
+                let rhs = self.read_expr();
+                let assign = AST::Assign(
+                    Box::new(lhs), Box::new(rhs), BinaryOps::Assign);
+                assigns.push(assign);
+            }
+        }
+        self.consume_expected(";");
+        AST::Block(assigns)
+    }
+
+    fn read_declspec(&mut self) -> Type {
+        match &self.cur().val {
+            "int" => return Type::Int,
+            _ => panic("Unknown type"),
+        }
+    }
+
+    fn read_declarator(&mut self, mut ty: Type) -> (Type, String) {
+        while self.consume("*") {
+            ty = Type::Ptr(Box::new(ty));
+        }
+        let name = self.read_ident();
+        (ty, name)
     }
 
     fn read_expr_stmt(&mut self) -> AST {
@@ -289,5 +348,9 @@ impl Parser {
             Token{ kind: TokenKind::FloatNum, val: n, ..}  => AST::Float(n.parse::<f64>().unwrap()),
             _ => panic!("Numerical literal is expected"),
         } 
+    }
+
+    fn read_ident(&mut self) -> String {
+        self.next().val
     }
 }

@@ -198,7 +198,7 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+'|'-'|'*'|'/'|'('|')'|'='|'<'|'>'|'!'|'&'|';' => Some(self.read_symbol()),
+                '+'|'-'|'*'|'/'|'('|')'|'='|'<'|'>'|'!'|'&'|','|';' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' => {
                     self.peek_next();

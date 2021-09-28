@@ -3,6 +3,7 @@ use ironcc::version;
 use ironcc::lexer;
 use ironcc::parser;
 use ironcc::codegen;
+use ironcc::types;
 
 use std::env;
 
