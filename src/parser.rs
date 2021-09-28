@@ -69,7 +69,10 @@ impl Parser {
         }
     }
 
-    // toplevel = exprstmt*
+    //
+    // ---------------- Generate AST ----------------
+    //
+
     fn read_toplevel(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
         while !self.cur().is_eof() {
@@ -199,8 +202,6 @@ impl Parser {
         self.read_primary()
     }
 
-    // primary ::= ( expr )
-    //           | num
     fn read_primary(&mut self) -> AST {
         if self.consume("(") {
             let ast = self.read_expr();
