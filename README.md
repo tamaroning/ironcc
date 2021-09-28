@@ -37,8 +37,11 @@ mul = unary (("*"|"/") unary)*
 unary = ("+" | "-" | "*" | "&") unary
         | primary
 
-primary = "(" expr ")" | <ident> | <num>
+primary = "(" expr ")" | <ident> func-args? | <num>
+->fun-argsがあればfunc-callとみなす
+
+func-call = <ident> "(" (assign ("," assign)*)? ")"
 
 ```
 
-<xxxx> means token.
+```<xxxx>``` means token.

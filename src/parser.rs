@@ -338,10 +338,27 @@ impl Parser {
             self.consume_expected(")");
             return ast;
         } else if self.cur().is_ident() {
+            if self.peek().matches("(") {
+                return self.read_func_call();
+            }
             return AST::Variable(self.read_ident());
         }else{
             return self.read_num();
         }
+    }
+
+    fn read_func_call(&mut self) -> AST {
+        let name = self.read_ident();
+        let mut args = Vec::new();
+        self.consume_expected("(");
+        if !self.consume(")") {
+            args.push(self.read_assign());
+            while self.consume(",") {
+                args.push(self.read_assign());
+            }
+            self.consume_expected(")");
+        }
+        AST::Funccall(name, args)
     }
 
     fn read_num(&mut self) -> AST {
