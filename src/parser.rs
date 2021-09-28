@@ -2,10 +2,11 @@ use std::fmt::Binary;
 
 use crate::lexer;
 use crate::node;
+use crate::node::UnaryOps;
 
 use lexer::Token;
 use lexer::TokenKind;
-use node::{AST, BinaryOp};
+use node::{AST, BinaryOps};
 
 pub fn run(filepath: String, tokens: Vec<Token>) -> Vec<AST> {
     let mut parser = Parser::new(filepath, tokens);
@@ -152,7 +153,7 @@ impl Parser {
         let mut ret = self.read_equality();
         if self.consume("=") {
             let rhs = self.read_assign();
-            ret = AST::BinaryOp(ret, rhs, BinaryOp::Assign); 
+            ret = AST::BinaryOp(ret, rhs, BinaryOps::Assign); 
         }
         ret
     }
@@ -164,13 +165,13 @@ impl Parser {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_relational()),
-                    BinaryOp::Eq,
+                    BinaryOps::Eq,
                 );
             } else if self.consume("!=") {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_relational()),
-                    BinaryOp::Ne,
+                    BinaryOps::Ne,
                 );
             } else {
                 break;
@@ -186,25 +187,25 @@ impl Parser {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_add()),
-                    BinaryOp::Lt,
+                    BinaryOps::Lt,
                 );
             } else if self.consume("<=") {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_add()),
-                    BinaryOp::Le,
+                    BinaryOps::Le,
                 );
             } else if self.consume(">") {
                 ast = AST::BinaryOp(
                     Box::new(self.read_add()),
                     Box::new(ast),
-                    BinaryOp::Lt,
+                    BinaryOps::Lt,
                 );
             } else if self.consume(">=") {
                 ast = AST::BinaryOp(
                     Box::new(self.read_add()),
                     Box::new(ast),
-                    BinaryOp::Le,
+                    BinaryOps::Le,
                 );
             } else {
                 break;
@@ -220,13 +221,13 @@ impl Parser {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_mul()),
-                    BinaryOp::Add,
+                    BinaryOps::Add,
                 );
             } else if self.consume("-") {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_mul()),
-                    BinaryOp::Sub,
+                    BinaryOps::Sub,
                 );
             } else {
                 break;
@@ -242,13 +243,13 @@ impl Parser {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_unary()),
-                    BinaryOp::Mul,
+                    BinaryOps::Mul,
                 );
             } else if self.consume("/") {
                 ast = AST::BinaryOp(
                     Box::new(ast),
                     Box::new(self.read_unary()),
-                    BinaryOp::Div,
+                    BinaryOps::Div,
                 );
             } else {
                 break;
@@ -258,14 +259,15 @@ impl Parser {
     }
 
     fn read_unary(&mut self) -> AST {
-        if self.consume("-") {
-            return AST::BinaryOp(
-                Box::new(AST::Int(0)),
-                Box::new(self.read_primary()),
-                BinaryOp::Sub,
-            );
+        if self.consume("+") {
+            return AST::UnaryOp(self.read_unary(), UnaryOps::Plus);
+        } else if self.consume("-") {
+            return AST::UnaryOp(self.read_unary(), UnaryOps::Minus);
+        } else if self.consume("&") {
+            return AST::UnaryOp(self.read_unary(), UnaryOps::Addr);
+        } else if self.consume("*") {
+            return AST::UnaryOp(self.read_unary(), UnaryOps::Deref);
         }
-        self.consume("+");
         self.read_primary()
     }
 

@@ -2,7 +2,8 @@
 pub enum AST {
     Int(i32),
     Float(f64),
-    BinaryOp(Box<AST>, Box<AST>, BinaryOp),
+    BinaryOp(Box<AST>, Box<AST>, BinaryOps),
+    UnaryOp(Box<AST>, UnaryOps),
     Variable(String),
     Return(Box<AST>),
     ExprStmt(Box<AST>),
@@ -14,7 +15,7 @@ pub enum AST {
 }
 
 #[derive(Debug, Clone)]
-pub enum BinaryOp {
+pub enum BinaryOps {
     Add,
     Sub,
     Mul,
@@ -26,6 +27,14 @@ pub enum BinaryOp {
     Assign,
 }
 
+#[derive(Debug, Clone)]
+pub enum UnaryOps {
+    Plus, // +
+    Minus, // -
+    Addr, // &
+    Deref, // *
+}
+
 impl AST {
     pub fn eval_const_expr(&self) -> i32 {
         match &self {
@@ -34,14 +43,14 @@ impl AST {
                 let l = l.eval_const_expr();
                 let r = r.eval_const_expr();
                 match op {
-                    &BinaryOp::Add => l + r,
-                    &BinaryOp::Sub => l - r,
-                    &BinaryOp::Mul => l * r,
-                    &BinaryOp::Div => l / r,
-                    &BinaryOp::Eq => (l == r) as i32,
-                    &BinaryOp::Ne => (l != r) as i32,
-                    &BinaryOp::Lt => (l < r) as i32,
-                    &BinaryOp::Le => (l <= r) as i32,
+                    &BinaryOps::Add => l + r,
+                    &BinaryOps::Sub => l - r,
+                    &BinaryOps::Mul => l * r,
+                    &BinaryOps::Div => l / r,
+                    &BinaryOps::Eq => (l == r) as i32,
+                    &BinaryOps::Ne => (l != r) as i32,
+                    &BinaryOps::Lt => (l < r) as i32,
+                    &BinaryOps::Le => (l <= r) as i32,
                     _ => panic!("Unknown operator"),
                 }
 

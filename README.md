@@ -28,7 +28,8 @@ add = mul (("+"|"-") mul)*
 
 mul = unary (("*"|"/") unary)*
 
-unary = ("+"|"-")? primary
+unary = ("+" | "-" | "*" | "&") unary
+        | primary
 
 primary = "(" expr ")" | <ident> | <num>
 

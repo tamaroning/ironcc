@@ -6,7 +6,7 @@ use std::ptr;
 use std::ffi::CString;
 use self::llvm::core::*;
 use self::llvm::prelude::*;
-use node::{AST, BinaryOp};
+use node::{AST, BinaryOps};
 
 pub struct Codegen {
     context: LLVMContextRef,
