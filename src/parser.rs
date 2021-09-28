@@ -93,11 +93,26 @@ impl Parser {
             let cond = self.read_expr();
             self.consume_expected(")");
             let then = self.read_stmt();
-            let mut els = AST::Block(Vec::new());
+            let mut els = AST::Nil;
             if self.consume("else") {
                 els = self.read_stmt();
             }
             return AST::If(Box::new(cond), Box::new(then), Box::new(els));
+        } else if self.consume("for") {
+            self.consume_expected("(");
+            let init = self.read_expr_stmt();
+            let cond = AST::Nil;
+            if !self.consume(";") {
+                cond = self.read_expr();
+                self.consume_expected(";");
+            }
+            let step = AST::Nil;
+            if !self.consume(")") {
+                step = self.read_expr();
+                self.consume(")");
+            }
+            let body = self.read_stmt();
+            return AST::For(Box::new(init), Box::new(cond), Box::new(step), Box::new(body));
         } else if self.consume("{") {
             return self.read_compound_stmt();
         } else {
@@ -115,7 +130,7 @@ impl Parser {
 
     fn read_expr_stmt(&mut self) -> AST {
         if self.consume(";") {
-            return AST::Block(Vec::new());
+            return AST::Nil;
         } else {
             let expr = self.read_expr();
             self.consume_expected(";");

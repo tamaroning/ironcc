@@ -8,6 +8,9 @@ pub enum AST {
     ExprStmt(Box<AST>),
     Block(Vec<AST>),
     If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
+    For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body
+    
+    Nil, // forのcond、ifのelse、expr-stmtのexprにおいて式や文などが存在しないときに用いる
 }
 
 #[derive(Debug, Clone)]

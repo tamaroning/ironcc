@@ -7,6 +7,7 @@ topLevel = stmt*
 
 stmt = "return" expr ";"
         | "if" "(" expr ")" stmt ("else" stmt)?
+        | "for" "(" expr-stmt expr? ";" expr? ")" stmt
         | expr-stmt
         | "{" compound-stmt
 
