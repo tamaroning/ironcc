@@ -113,6 +113,12 @@ impl Parser {
             }
             let body = self.read_stmt();
             return AST::For(Box::new(init), Box::new(cond), Box::new(step), Box::new(body));
+        } else if self.consume("while") {
+            self.consume_expected("(");
+            let cond = self.read_expr();
+            self.consume_expected(")");
+            let body = self.read_stmt();
+            return AST::While(Box::new(cond), Box::new(body)); 
         } else if self.consume("{") {
             return self.read_compound_stmt();
         } else {

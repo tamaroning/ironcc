@@ -9,7 +9,7 @@ pub enum AST {
     Block(Vec<AST>),
     If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
     For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body
-    
+    While(Box<AST>, Box<AST>), // cond, body
     Nil, // forのcond、ifのelse、expr-stmtのexprにおいて式や文などが存在しないときに用いる
 }
 
