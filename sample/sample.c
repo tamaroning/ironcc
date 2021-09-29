@@ -1,5 +1,5 @@
 int* func1(int argc) {
-    int a[100];
+    int a[5][10];
     return a;
 }
 

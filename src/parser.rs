@@ -216,6 +216,7 @@ impl Parser {
         if self.consume("[") {    
             let arr_sz = self.read_num();
             self.consume_expected("]");
+            ty = self.read_type_suffix(ty);
             ty = Type::Array(Box::new(ty), arr_sz as i32);
         } else if self.consume("(") {
             let (types, names) = self.read_func_params();

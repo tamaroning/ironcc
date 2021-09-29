@@ -31,8 +31,8 @@ func-params = (param ("," param)*)? ")"
 param = declspec declarator
 
 type-suffix = "(" func-params no
-               | "[" <num> "]"
-               | ε
+        | "[" <num> "]" type-suffix
+        | ε
 
 expr-stmt = expr? ";"
 
