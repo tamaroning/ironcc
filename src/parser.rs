@@ -105,12 +105,7 @@ impl Parser {
         self.consume_expected("{");
         let body = self.read_compound_stmt();
         
-        match ty {
-            Type::Func(ret_type, param_types, param_names) => {
-                return AST::FuncDef(ret_type, func_name, param_types, param_names, self.locals.clone(), Box::new(body));
-            },
-            _ => panic!("Invalid function definition"),
-        }
+        return AST::FuncDef(Box::new(ty), func_name, self.locals.clone(), Box::new(body));
     }
 
     fn read_stmt(&mut self) -> AST {
@@ -224,6 +219,7 @@ impl Parser {
             ty = Type::Array(Box::new(ty), arr_sz as i32);
         } else if self.consume("(") {
             let (types, names) = self.read_func_params();
+            // ret type, param types
             return Type::Func(Box::new(ty), types, names);
         }
         ty
@@ -408,6 +404,9 @@ impl Parser {
             let ast = self.read_expr();
             self.consume_expected(")");
             return ast;
+        } else if self.consume("sizeof") {
+            let ast = self.read_unary();
+            return AST::UnaryOp(Box::new(ast), UnaryOps::Sizeof);
         } else if self.cur().is_ident() {
             if self.peek().matches("(") {
                 return self.read_func_call();

@@ -55,7 +55,10 @@ unary = ("+" | "-" | "*" | "&") unary
 
 postfix = primary ("[" expr "]")*
 
-primary = "(" expr ")" | <ident> func-args? | num
+primary = "(" expr ")"
+        | "sizeof" unary
+        | <ident> func-args?
+        | num
 ->fun-argsがあればfunc-callとみなす
 
 func-call = <ident> "(" (assign ("," assign)*)? ")"
