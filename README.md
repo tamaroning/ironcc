@@ -3,7 +3,9 @@ A toy C compiler written in Rust
 
 # Syntax
 ```
-program = func-def*
+program = top-level*
+
+top-level = func-def
 
 func-def = declspec declarator "{" compound-stmt
 

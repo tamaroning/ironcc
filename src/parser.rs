@@ -12,7 +12,7 @@ use node::{AST, BinaryOps};
 
 pub fn run(filepath: String, tokens: Vec<Token>) -> Vec<AST> {
     let mut parser = Parser::new(filepath, tokens);
-    let ast = parser.read_toplevel();
+    let ast = parser.read_program();
     println!("locals: {:?}", parser.locals);
     ast
 }
@@ -86,12 +86,16 @@ impl Parser {
     // ---------------- Generate AST ----------------
     //
 
-    fn read_toplevel(&mut self) -> Vec<AST> {
+    fn read_program(&mut self) -> Vec<AST> {
         let mut ret = Vec::new();
         while !self.cur().is_eof() {
-           ret.push(self.read_func_def());
+           ret.push(self.read_top_level());
         }
         ret
+    }
+
+    fn read_top_level(&mut self) -> AST {
+        self.read_func_def()
     }
 
     fn read_func_def(&mut self) -> AST {
