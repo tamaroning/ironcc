@@ -382,7 +382,21 @@ impl Parser {
         } else if self.consume("*") {
             return AST::UnaryOp(Box::new(self.read_unary()), UnaryOps::Deref);
         }
-        self.read_primary()
+        self.read_postfix()
+    }
+
+    fn read_postfix(&mut self) -> AST {
+        let mut ret = self.read_primary();
+        // x[y] is short for *(x+y)
+        if self.consume("[") {
+            let rhs = self.read_expr();
+            self.consume_expected("]");
+            ret = AST::UnaryOp(
+                Box::new(AST::BinaryOp(Box::new(ret), Box::new(rhs), BinaryOps::Add)),
+                UnaryOps::Deref,
+            );
+        }
+        ret
     }
 
     fn read_primary(&mut self) -> AST {

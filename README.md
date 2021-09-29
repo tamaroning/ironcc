@@ -49,7 +49,9 @@ add = mul (("+"|"-") mul)*
 mul = unary (("*"|"/") unary)*
 
 unary = ("+" | "-" | "*" | "&") unary
-        | primary
+        | postfix
+
+postfix = primary ("[" expr "]")*
 
 primary = "(" expr ")" | <ident> func-args? | num
 ->fun-argsがあればfunc-callとみなす
@@ -64,3 +66,4 @@ num = <num>
 
 # Todo
 - support arithmetic operations of pointers
+- support multi-[] operator (like a[3][4], b[0][1][3])
