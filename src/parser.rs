@@ -97,12 +97,16 @@ impl Parser {
     fn read_func_def(&mut self) -> AST {
         self.locals = HashMap::new();
         let ty = self.read_declspec();
-        let (ty, name) = self.read_declarator(ty);
-        let param_names = Vec::new();
+        let (ty, func_name) = self.read_declarator(ty);
         self.consume_expected("{");
         let body = self.read_compound_stmt();
-
-        AST::FuncDef(ty, param_names, name, Box::new(body), self.locals.clone())
+        
+        match ty {
+            Type::Func(ret_type, param_types, param_names) => {
+                return AST::FuncDef(ret_type, func_name, param_types, param_names, self.locals.clone(), Box::new(body));
+            },
+            _ => panic!("Invalid function definition"),
+        }
     }
 
     fn read_stmt(&mut self) -> AST {
@@ -204,6 +208,43 @@ impl Parser {
             ty = Type::Ptr(Box::new(ty));
         }
         let name = self.read_ident();
+        ty = self.read_type_suffix(ty);
+        (ty, name)
+    }
+
+    fn read_type_suffix(&mut self, mut ty: Type) -> Type {
+        if self.consume("[") {    
+            let arr_sz = self.read_num();
+            self.consume_expected("]");
+            ty = Type::Array(Box::new(ty), arr_sz as i32);
+        } else if self.consume("(") {
+            let (types, names) = self.read_func_params();
+            return Type::Func(Box::new(ty), types, names);
+        }
+        ty
+    }
+
+    fn read_func_params(&mut self) -> (Vec<Type>, Vec<String>) {
+        let mut types = Vec::new();
+        let mut names = Vec::new();
+
+        if !self.consume(")") {
+            let (ty, name) = self.read_param();
+            types.push(ty);
+            names.push(name);
+            while self.consume(",") {
+                let (ty, name) = self.read_param();
+                types.push(ty);
+                names.push(name);
+            }  
+            self.consume_expected(")");
+        }
+        (types, names)
+    }
+
+    fn read_param(&mut self) -> (Type, String) {
+        let ty = self.read_declspec();
+        let (ty, name) = self.read_declarator(ty);
         (ty, name)
     }
 
@@ -354,7 +395,7 @@ impl Parser {
             }
             return AST::Variable(self.read_ident());
         }else{
-            return self.read_num();
+            return self.read_ast_num();
         }
     }
 
@@ -372,10 +413,18 @@ impl Parser {
         AST::FuncCall(name, args)
     }
 
-    fn read_num(&mut self) -> AST {
+    fn read_ast_num(&mut self) -> AST {
         match self.next() {
             Token{ kind: TokenKind::IntNum, val: n, ..}  => AST::Int(n.parse::<i32>().unwrap()),
             Token{ kind: TokenKind::FloatNum, val: n, ..}  => AST::Float(n.parse::<f64>().unwrap()),
+            _ => panic!("Numerical literal is expected"),
+        } 
+    }
+
+    fn read_num(&mut self) -> f64 {
+        match self.next() {
+            Token{ kind: TokenKind::IntNum, val: n, ..}  => n.parse::<f64>().unwrap(),
+            Token{ kind: TokenKind::FloatNum, val: n, ..}  => n.parse::<f64>().unwrap(),
             _ => panic!("Numerical literal is expected"),
         } 
     }

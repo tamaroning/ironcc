@@ -15,7 +15,7 @@ pub enum AST {
     For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body
     While(Box<AST>, Box<AST>), // cond, body
     FuncCall(String, Vec<AST>), // func-name, args
-    FuncDef(Type, Vec<String>, String, Box<AST>, HashMap<String, Type>), // type, arg names, func name, body 
+    FuncDef(Box<Type>, String, Vec<Type>, Vec<String>, HashMap<String, Type>, Box<AST>), // type, func name, param types, param names, locals, body 
     Nil, // forのcond、ifのelse、expr-stmtのexprにおいて式や文などが存在しないときに用いる
 }
 

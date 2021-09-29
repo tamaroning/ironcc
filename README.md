@@ -5,7 +5,7 @@ A toy C compiler written in Rust
 ```
 program = func-def*
 
-func-def = declspec decalarator "{" compound-stmt
+func-def = declspec declarator "{" compound-stmt
 
 stmt = "return" expr ";"
         | "if" "(" expr ")" stmt ("else" stmt)?
@@ -20,7 +20,19 @@ declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? "
 
 declspec = "int"
 
-declarator = "*"* <ident>
+declarator = "*"* <ident> type-suffix
+
+type-suffix = "(" func-params
+        |"[" <num> "]"
+        | ε
+
+func-params = (param ("," param)*)? ")"
+
+param = declspec declarator
+
+type-suffix = "(" func-params no
+               | "[" <num> "]"
+               | ε
 
 expr-stmt = expr? ";"
 
@@ -39,11 +51,16 @@ mul = unary (("*"|"/") unary)*
 unary = ("+" | "-" | "*" | "&") unary
         | primary
 
-primary = "(" expr ")" | <ident> func-args? | <num>
+primary = "(" expr ")" | <ident> func-args? | num
 ->fun-argsがあればfunc-callとみなす
 
 func-call = <ident> "(" (assign ("," assign)*)? ")"
 
+num = <num>
+
 ```
 
-```<xxxx>``` means token.
+<> means token.
+
+# Todo
+- support arithmetic operations of pointers
