@@ -59,7 +59,7 @@ impl Codegen {
         let bb_entry = LLVMAppendBasicBlock(main_func, CString::new("entry").unwrap().as_ptr());
 
         LLVMPositionBuilderAtEnd(self.builder, bb_entry);
-        LLVMBuildRet(self.builder, self.make_int(0, false));
+        LLVMBuildRet(self.builder, self.make_int(0 as u64, false).unwrap());
         LLVMDumpModule(self.module);
     }
 
@@ -90,9 +90,37 @@ impl Codegen {
 
         let bb_entry = LLVMAppendBasicBlock(func, CString::new("entry").unwrap().as_ptr());
         LLVMPositionBuilderAtEnd(self.builder, bb_entry);
+
+        // TODO: register arguments as local variables
+
+        self.gen(&*body);
     }
 
-    pub unsafe fn make_int(&mut self, n: u64, is_unsigned: bool) -> LLVMValueRef {
-        LLVMConstInt(LLVMInt32TypeInContext(self.context), n, if is_unsigned {1} else {0})
+    pub unsafe fn gen(&mut self, ast: &AST) -> Option<LLVMValueRef> {
+        match &ast {
+            AST::Block(ref block) => self.gen_block(block),
+            AST::Int(ref n) => self.make_int(*n as u64, false),
+            AST::Return(None) => Some(LLVMBuildRetVoid(self.builder)),
+            AST::Return(Some(ref val)) => self.gen_return(val),
+            _ => None,
+        }
+    }
+
+    pub unsafe fn gen_block(&mut self, block: &Vec<AST>) -> Option<LLVMValueRef> {
+        for ast in block {
+            self.gen(ast);
+        }
+        None
+    }
+
+    pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<LLVMValueRef> {
+        let ret_val = self.gen(ast);
+        Some(
+            LLVMBuildRet(self.builder, ret_val.unwrap())
+        )
+    } 
+
+    pub unsafe fn make_int(&mut self, n: u64, is_unsigned: bool) -> Option<LLVMValueRef> {
+        Some(LLVMConstInt(LLVMInt32Type(), n, if is_unsigned {1} else {0}))
     }
 }

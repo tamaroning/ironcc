@@ -110,9 +110,14 @@ impl Parser {
 
     fn read_stmt(&mut self) -> AST {
         if self.consume("return") {
-            let expr = self.read_expr();
-            self.consume_expected(";");
-            return AST::Return(Box::new(expr));
+            if self.consume(";") {
+                return AST::Return(None);
+            } else {
+                let expr = self.read_expr();
+                let ret_ast =  AST::Return(Some(Box::new(expr)));
+                self.consume_expected(";");
+                return ret_ast;
+            }
         } else if self.consume("if") {
             self.consume_expected("(");
             let cond = self.read_expr();

@@ -28,7 +28,7 @@ fn main() {
         }
 
         unsafe {
-            let mut codegen = codegen::Codegen::new("mod");
+            let mut codegen = codegen::Codegen::new(filepath.clone().as_str());
             codegen.gen_program(nodes);
         }
     }

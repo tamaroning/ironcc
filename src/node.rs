@@ -8,7 +8,7 @@ pub enum AST {
     BinaryOp(Box<AST>, Box<AST>, BinaryOps),
     UnaryOp(Box<AST>, UnaryOps),
     Variable(String),
-    Return(Box<AST>),
+    Return(Option<Box<AST>>),
     ExprStmt(Box<AST>),
     Block(Vec<AST>),
     If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
