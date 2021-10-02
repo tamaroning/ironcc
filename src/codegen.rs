@@ -77,9 +77,10 @@ impl Codegen {
             CString::new(func_name.as_str()).unwrap().as_ptr(),
             func_ty,
         );
-
         let bb_entry = LLVMAppendBasicBlock(func, CString::new("entry").unwrap().as_ptr());
         LLVMPositionBuilderAtEnd(self.builder, bb_entry);
+        
+        self.cur_func = Some(func);
 
         // TODO: register arguments as local variables
 
@@ -93,6 +94,7 @@ impl Codegen {
             AST::Int(ref n) => self.make_int(*n as u64, false),
             AST::Return(None) => Some(LLVMBuildRetVoid(self.builder)),
             AST::Return(Some(ref val)) => self.gen_return(val),
+            AST::VariableDecl(ref ty, ref name, ref init_opt) => self.gen_local_var_decl(ty, name, init_opt),
             _ => None,
         }
     }
@@ -104,6 +106,26 @@ impl Codegen {
         None
     }
 
+    pub unsafe fn gen_local_var_decl(&mut self, ty: &Type, name: &String, init_opt: &Option<Box<AST>>) -> Option<LLVMValueRef> {
+        let func = self.cur_func.unwrap();
+        let builder = LLVMCreateBuilderInContext(self.context);
+        let entry_bb = LLVMGetEntryBasicBlock(func);
+        // insert declaration at first position of the function
+        let first_inst = LLVMGetFirstInstruction(entry_bb);
+        if first_inst == ptr::null_mut() {
+            LLVMPositionBuilderAtEnd(builder, entry_bb);
+        } else {
+            LLVMPositionBuilderBefore(builder, first_inst);
+        }
+        let llvm_ty = self.type_to_llvmty(ty);
+        let var = LLVMBuildAlloca(builder, llvm_ty, CString::new(name.as_str()).unwrap().as_ptr());
+
+        // TODO: Is it OK not to go back to the function end  
+        //LLVMPositionBuilderAtEnd(builder, entry_bb);
+
+        Some(var)
+    }
+
     pub unsafe fn gen_binary_op(
         &mut self,
         lhs: &AST,
@@ -111,6 +133,9 @@ impl Codegen {
         op: &BinaryOps,
     ) -> Option<LLVMValueRef> {
         // TODO: assign
+        if let BinaryOps::Assign = op {
+            return self.gen_assign(lhs, rhs);
+        }
 
         // TODO: type casting
         // support ptr binary, double binary
@@ -184,6 +209,12 @@ impl Codegen {
             _ => panic!("Unsupported bianry op"),
         };
         Some(res)
+    }
+
+    pub unsafe fn gen_assign(&mut self, lhs: &AST, rhs: &AST) -> Option<LLVMValueRef> {
+        let rhs_val = self.gen(rhs).unwrap();
+        // TODO: implement
+        panic!("Assignment is not supported");
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<LLVMValueRef> {
