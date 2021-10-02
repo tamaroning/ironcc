@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::types::Type;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum AST {
@@ -8,14 +8,15 @@ pub enum AST {
     BinaryOp(Box<AST>, Box<AST>, BinaryOps),
     UnaryOp(Box<AST>, UnaryOps),
     Variable(String),
+    VariableDecl(Type, String, Option<Box<AST>>), // type, name, init val
     Return(Option<Box<AST>>),
     ExprStmt(Box<AST>),
     Block(Vec<AST>),
-    If(Box<AST>, Box<AST>, Box<AST>), // cond, then, els
+    If(Box<AST>, Box<AST>, Box<AST>),            // cond, then, els
     For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body
-    While(Box<AST>, Box<AST>), // cond, body
-    FuncCall(String, Vec<AST>), // func-name, args
-    FuncDef(Box<Type>, String, Box<AST>), // functype, func name, param types, param names, locals, body 
+    While(Box<AST>, Box<AST>),                   // cond, body
+    FuncCall(String, Vec<AST>),                  // func-name, args
+    FuncDef(Box<Type>, String, Box<AST>), // functype, func name, param types, param names, locals, body
     Nil, // forのcond、ifのelse、expr-stmtのexprにおいて式や文などが存在しないときに用いる
 }
 
@@ -34,9 +35,9 @@ pub enum BinaryOps {
 
 #[derive(Debug, Clone)]
 pub enum UnaryOps {
-    Plus, // +
+    Plus,  // +
     Minus, // -
-    Addr, // &
+    Addr,  // &
     Deref, // *
     Sizeof,
 }
@@ -59,8 +60,7 @@ impl AST {
                     &BinaryOps::Le => (l <= r) as i32,
                     _ => panic!("Unknown operator"),
                 }
-
-            },
+            }
             _ => panic!("Expected constant expression"),
         }
     }
