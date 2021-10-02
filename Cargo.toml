@@ -2,7 +2,10 @@
 name = "ironcc"
 version = "0.1.0"
 edition = "2018"
-author = ["tamaron"]
+authors = ["tamaron <tamaron1203@gmail.com>"]
+description = "A small C compiler written in Rust"
+license = "MIT"
+repository = "https://github.com/tamaroning/ironcc"
 
 [dependencies]
 llvm-sys = "120"
