@@ -1,9 +1,9 @@
 extern crate ironcc;
-use ironcc::version;
+use ironcc::codegen;
 use ironcc::lexer;
 use ironcc::parser;
-use ironcc::codegen;
 use ironcc::types;
+use ironcc::version;
 
 use std::env;
 

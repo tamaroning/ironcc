@@ -1,8 +1,8 @@
-use std::iter;
-use std::str;
 use std::fs::File;
 use std::io::prelude::*;
+use std::iter;
 use std::iter::FromIterator;
+use std::str;
 
 #[derive(Debug, Clone)]
 pub enum TokenKind {
@@ -47,33 +47,36 @@ impl Token {
             _ => false,
         };
     }
-
 }
 
 pub struct Lexer<'a> {
     cur_line: u32,
     filepath: String,
     peek: iter::Peekable<str::Chars<'a>>,
-    peek_pos: usize, 
+    peek_pos: usize,
 }
 
 pub fn run(filepath: String) -> Vec<Token> {
     let mut file = File::open(filepath.clone()).expect("File not found");
     let mut content = String::new();
-    file.read_to_string(&mut content).expect("Couldn't open the file");
+    file.read_to_string(&mut content)
+        .expect("Couldn't open the file");
     let mut lexer = Lexer::new(filepath.clone(), content.as_str());
-    
+
     let mut tokens = Vec::new();
     loop {
         let token = lexer.read_token();
         match token {
-            Some(Token { kind: TokenKind::Eof, .. }) => {
+            Some(Token {
+                kind: TokenKind::Eof,
+                ..
+            }) => {
                 tokens.push(token.unwrap());
                 break;
             }
             Some(_) => {
                 tokens.push(token.unwrap());
-            },
+            }
             _ => panic!("Lexer error"),
         }
     }
@@ -124,17 +127,29 @@ impl<'a> Lexer<'a> {
         for op in ops {
             if self.starts_with(op) {
                 self.advance_by(2);
-                return Token { kind: TokenKind::Symbol, val: op.to_string(), line: self.cur_line };
+                return Token {
+                    kind: TokenKind::Symbol,
+                    val: op.to_string(),
+                    line: self.cur_line,
+                };
             }
         }
         // single character symbols
         let sym = self.peek_next().unwrap().to_string();
-        Token { kind: TokenKind::Symbol, val: sym, line: self.cur_line }
+        Token {
+            kind: TokenKind::Symbol,
+            val: sym,
+            line: self.cur_line,
+        }
     }
 
     pub fn read_newline(&mut self) -> Token {
         self.cur_line += 1;
-        Token { kind: TokenKind::NewLine, val: "".to_string(), line: self.cur_line }
+        Token {
+            kind: TokenKind::NewLine,
+            val: "".to_string(),
+            line: self.cur_line,
+        }
     }
 
     // ident, keyword
@@ -151,10 +166,14 @@ impl<'a> Lexer<'a> {
             self.peek_next();
         }
         let tk = match string.as_str() {
-            "sizeof"|"int"|"if"|"else"|"for"|"while" => TokenKind::Keyword,
+            "sizeof" | "int" | "if" | "else" | "for" | "while" => TokenKind::Keyword,
             _ => TokenKind::Ident,
         };
-        Token { kind: tk, val: string, line: self.cur_line }
+        Token {
+            kind: tk,
+            val: string,
+            line: self.cur_line,
+        }
     }
 
     pub fn read_num(&mut self) -> Token {
@@ -175,9 +194,17 @@ impl<'a> Lexer<'a> {
             self.peek_next();
         }
         if is_float {
-            Token { kind: TokenKind::FloatNum, val: s, line: self.cur_line }
+            Token {
+                kind: TokenKind::FloatNum,
+                val: s,
+                line: self.cur_line,
+            }
         } else {
-            Token { kind: TokenKind::IntNum, val: s, line: self.cur_line }
+            Token {
+                kind: TokenKind::IntNum,
+                val: s,
+                line: self.cur_line,
+            }
         }
     }
 
@@ -205,17 +232,18 @@ impl<'a> Lexer<'a> {
         match self.peek.peek() {
             Some(&c) => match c {
                 'a'..='z' | 'A'..='Z' => Some(self.read_string_token()),
-                '+'|'-'|'*'|'/'|'('|')'|'='|'<'|'>'|'!'|'&'|','|';'|'{'|'}'|'['|']'|'.' => Some(self.read_symbol()),
+                '+' | '-' | '*' | '/' | '(' | ')' | '=' | '<' | '>' | '!' | '&' | ',' | ';'
+                | '{' | '}' | '[' | ']' | '.' => Some(self.read_symbol()),
                 '0'..='9' => Some(self.read_num()),
                 ' ' | '\t' | '\r' => {
                     self.peek_next();
                     self.read_token()
-                },
+                }
                 '\n' => {
                     self.peek_next();
                     self.read_newline();
                     self.read_token()
-                },
+                }
                 '#' => {
                     self.peek_next();
                     self.read_directive();
@@ -225,7 +253,11 @@ impl<'a> Lexer<'a> {
                 _ => panic!("Unknown character: '{}' code: {}", c, c as u8),
             },
             // TODO: None always means Eof?
-            _ => Some(Token{ kind: TokenKind::Eof, val: "".to_string(), line: self.cur_line }),
+            _ => Some(Token {
+                kind: TokenKind::Eof,
+                val: "".to_string(),
+                line: self.cur_line,
+            }),
         }
     }
 }

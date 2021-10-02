@@ -1,7 +1,7 @@
-pub mod error;
-pub mod version;
-pub mod lexer;
-pub mod parser;
-pub mod node;
 pub mod codegen;
+pub mod error;
+pub mod lexer;
+pub mod node;
+pub mod parser;
 pub mod types;
+pub mod version;
