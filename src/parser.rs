@@ -100,12 +100,12 @@ impl Parser {
 
     fn read_func_def(&mut self) -> AST {
         self.locals = HashMap::new();
-        let ty = self.read_declspec();
-        let (ty, func_name) = self.read_declarator(ty);
+        let func_ty = self.read_declspec();
+        let (func_ty, func_name) = self.read_declarator(func_ty);
         self.consume_expected("{");
         let body = self.read_compound_stmt();
         
-        return AST::FuncDef(Box::new(ty), func_name, self.locals.clone(), Box::new(body));
+        return AST::FuncDef(Box::new(func_ty), func_name, Box::new(body));
     }
 
     fn read_stmt(&mut self) -> AST {

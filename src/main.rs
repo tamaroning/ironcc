@@ -27,11 +27,9 @@ fn main() {
             println!("{:?}", node);
         }
 
-        /*
         unsafe {
             let mut codegen = codegen::Codegen::new("mod");
-            codegen.gen();
+            codegen.gen_program(nodes);
         }
-        */
     }
 }
