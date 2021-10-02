@@ -99,6 +99,7 @@ impl Codegen {
     pub unsafe fn gen(&mut self, ast: &AST) -> Option<LLVMValueRef> {
         match &ast {
             AST::Block(ref block) => self.gen_block(block),
+            AST::BinaryOp(ref lhs, ref rhs, ref op) => self.gen_binary_op(&**lhs, &**rhs, &*op),
             AST::Int(ref n) => self.make_int(*n as u64, false),
             AST::Return(None) => Some(LLVMBuildRetVoid(self.builder)),
             AST::Return(Some(ref val)) => self.gen_return(val),
@@ -111,6 +112,35 @@ impl Codegen {
             self.gen(ast);
         }
         None
+    }
+
+    pub unsafe fn gen_binary_op(&mut self, lhs: &AST, rhs: &AST, op: &BinaryOps) -> Option<LLVMValueRef> {
+        // TODO: assign
+        
+        // TODO: type casting
+        // support ptr binary, double binary
+        
+        self.gen_int_binary_op(lhs, rhs, op)
+    }
+
+    pub unsafe fn gen_int_binary_op(&mut self, lhs: &AST, rhs: &AST, op: &BinaryOps) -> Option<LLVMValueRef> {
+        let lhs_val = self.gen(&*lhs).unwrap();
+        let rhs_val = self.gen(&*rhs).unwrap();
+
+        let res = match op {
+            BinaryOps::Add => LLVMBuildAdd(self.builder, lhs_val, rhs_val, CString::new("add").unwrap().as_ptr()),
+            BinaryOps::Sub => LLVMBuildSub(self.builder, lhs_val, rhs_val, CString::new("sub").unwrap().as_ptr()),
+            BinaryOps::Mul => LLVMBuildMul(self.builder, lhs_val, rhs_val, CString::new("mul").unwrap().as_ptr()),
+            BinaryOps::Div => LLVMBuildSDiv(self.builder, lhs_val, rhs_val, CString::new("sdiv").unwrap().as_ptr()),
+            BinaryOps::Eq => LLVMBuildICmp(self.builder, llvm::LLVMIntPredicate::LLVMIntEQ, lhs_val, rhs_val, CString::new("eql").unwrap().as_ptr()),
+            BinaryOps::Ne => LLVMBuildICmp(self.builder, llvm::LLVMIntPredicate::LLVMIntNE, lhs_val, rhs_val, CString::new("ne").unwrap().as_ptr()),
+            BinaryOps::Lt => LLVMBuildICmp(self.builder, llvm::LLVMIntPredicate::LLVMIntSLT, lhs_val, rhs_val, CString::new("lt").unwrap().as_ptr()),
+            BinaryOps::Le => LLVMBuildICmp(self.builder, llvm::LLVMIntPredicate::LLVMIntSLE, lhs_val, rhs_val, CString::new("le").unwrap().as_ptr()),
+            
+            _ => panic!("Unsupported bianry op"),
+        };
+        Some(res)
+        
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<LLVMValueRef> {
