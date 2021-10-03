@@ -4,7 +4,7 @@ A toy C compiler written in Rust.
 ironcc is aiming to suppport C99, and C11.
 
 # Status
-ironcc suppports the following functions:
+ironcc supports the following functions:
 
 - function definition
 - local variable declaration
@@ -14,7 +14,7 @@ ironcc suppports the following functions:
 - numerical literal
 - binary operations (+, -, *, /)
 - comparison operations (==, !=, <, >, <=, >=)
-- unary operations (+)
+- unary operations (+, -)
 
 # Syntax
 ```

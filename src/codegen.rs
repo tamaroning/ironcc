@@ -1,19 +1,22 @@
 extern crate llvm_sys as llvm;
+#[warn(unused_import_braces)]
 use self::llvm::core::*;
 use self::llvm::prelude::*;
-use self::llvm::execution_engine;
-use self::llvm::target::*;
 use crate::node;
 use crate::types;
+/* 
+use self::llvm::execution_engine;
+use self::llvm::target::*;
 use llvm::execution_engine::LLVMCreateExecutionEngineForModule;
 use llvm::execution_engine::LLVMDisposeExecutionEngine;
 use llvm::execution_engine::LLVMGetFunctionAddress;
 use llvm::execution_engine::LLVMLinkInMCJIT;
+use std::mem;
+*/
 use node::{BinaryOps, UnaryOps, AST};
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::ptr;
-use std::mem;
 use types::Type;
 
 #[derive(Debug)]
@@ -206,6 +209,11 @@ impl Codegen {
     pub unsafe fn gen_unary_op(&mut self, ast: &AST, op: &UnaryOps) -> Option<LLVMValueRef> {
         let res = match op {
             UnaryOps::Plus => self.gen(ast),
+            UnaryOps::Minus => {
+                let val = self.gen(ast).unwrap();
+                let neg = LLVMBuildNeg(self.builder, val, CString::new("neg").unwrap().as_ptr());
+                Some(neg)
+            },
             _ => panic!("Unsupported unary op"),
         };
         res
