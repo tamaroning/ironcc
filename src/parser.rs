@@ -255,7 +255,7 @@ impl Parser {
         } else {
             let expr = self.read_expr();
             self.consume_expected(";");
-            return AST::ExprStmt(Box::new(expr));
+            return expr;
         }
     }
 
@@ -379,7 +379,7 @@ impl Parser {
             if self.peek().matches("(") {
                 return self.read_func_call();
             }
-            return AST::Variable(self.read_ident());
+            return AST::Load(Box::new(AST::Variable(self.read_ident())));
         } else {
             return self.read_ast_num();
         }

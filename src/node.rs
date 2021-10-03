@@ -7,10 +7,11 @@ pub enum AST {
     Float(f64),
     BinaryOp(Box<AST>, Box<AST>, BinaryOps),
     UnaryOp(Box<AST>, UnaryOps),
+    Load(Box<AST>),
     Variable(String),
     VariableDecl(Type, String, Option<Box<AST>>), // type, name, init val
     Return(Option<Box<AST>>),
-    ExprStmt(Box<AST>),
+    //ExprStmt(Box<AST>),
     Block(Vec<AST>),
     If(Box<AST>, Box<AST>, Box<AST>),            // cond, then, els
     For(Box<AST>, Box<AST>, Box<AST>, Box<AST>), // init, cond, step, body

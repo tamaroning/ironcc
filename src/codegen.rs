@@ -1,18 +1,49 @@
 extern crate llvm_sys as llvm;
 use self::llvm::core::*;
 use self::llvm::prelude::*;
+use self::llvm::execution_engine;
+use self::llvm::target::*;
 use crate::node;
 use crate::types;
+use llvm::execution_engine::LLVMCreateExecutionEngineForModule;
+use llvm::execution_engine::LLVMDisposeExecutionEngine;
+use llvm::execution_engine::LLVMGetFunctionAddress;
+use llvm::execution_engine::LLVMLinkInMCJIT;
 use node::{BinaryOps, UnaryOps, AST};
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::ptr;
+use std::mem;
 use types::Type;
+
+#[derive(Debug)]
+pub struct VarInfo {
+    llvm_ty: LLVMTypeRef,
+    llvm_val: LLVMValueRef,
+}
+
+impl VarInfo {
+    pub fn new(llvm_ty: LLVMTypeRef, llvm_val: LLVMValueRef) -> VarInfo {
+        VarInfo {
+            llvm_ty: llvm_ty,
+            llvm_val: llvm_val,
+        }
+    }
+}
 
 pub struct Codegen {
     context: LLVMContextRef,
     module: LLVMModuleRef,
     builder: LLVMBuilderRef,
     cur_func: Option<LLVMValueRef>,
+    local_varmap: HashMap<String, VarInfo>,
+}
+
+pub unsafe fn inside_load(ast: &AST) -> &AST {
+    match ast {
+        AST::Load(node) => node,
+        _ => panic!("Error: ast load"),
+    }
 }
 
 impl Codegen {
@@ -23,6 +54,7 @@ impl Codegen {
             module: LLVMModuleCreateWithNameInContext(c_mod_name.as_ptr(), LLVMContextCreate()),
             builder: LLVMCreateBuilderInContext(LLVMContextCreate()),
             cur_func: None,
+            local_varmap: HashMap::new(),
         }
     }
 
@@ -67,7 +99,30 @@ impl Codegen {
                 _ => panic!("Unsupported node type"),
             }
         }
+        // Debug
+        LLVMDisposeBuilder(self.builder);
         LLVMDumpModule(self.module);
+        /*
+        //JIT exec
+        // build engine
+        let mut ee = mem::uninitialized();
+        let mut out = mem::zeroed();
+        //LLVMLinkInMCJIT();
+        LLVM_InitializeNativeTarget();
+        LLVM_InitializeNativeAsmParser();
+        LLVM_InitializeNativeAsmParser();
+        //LLVMInitializeX
+
+        LLVMCreateExecutionEngineForModule(&mut ee, self.module, &mut out);
+
+        let addr = LLVMGetFunctionAddress(ee, b"main\0".as_ptr() as *const _);
+        let f: extern "C" fn() -> i32 = mem::transmute(addr);
+
+        println!("ret = {}", f());
+
+        LLVMDisposeExecutionEngine(ee);
+        LLVMContextDispose(self.context);
+        */
     }
 
     pub unsafe fn gen_func_def(&mut self, func_ty: Box<Type>, func_name: String, body: Box<AST>) {
@@ -79,12 +134,16 @@ impl Codegen {
         );
         let bb_entry = LLVMAppendBasicBlock(func, CString::new("entry").unwrap().as_ptr());
         LLVMPositionBuilderAtEnd(self.builder, bb_entry);
-        
+
         self.cur_func = Some(func);
 
         // TODO: register arguments as local variables
 
         self.gen(&*body);
+
+        println!("{:?}", self.local_varmap);
+        // reset local variables
+        self.local_varmap = HashMap::new();
     }
 
     pub unsafe fn gen(&mut self, ast: &AST) -> Option<LLVMValueRef> {
@@ -94,7 +153,11 @@ impl Codegen {
             AST::Int(ref n) => self.make_int(*n as u64, false),
             AST::Return(None) => Some(LLVMBuildRetVoid(self.builder)),
             AST::Return(Some(ref val)) => self.gen_return(val),
-            AST::VariableDecl(ref ty, ref name, ref init_opt) => self.gen_local_var_decl(ty, name, init_opt),
+            AST::Load(ref expr) => self.gen_load(expr),
+            AST::Variable(ref name) => self.gen_var(name),
+            AST::VariableDecl(ref ty, ref name, ref init_opt) => {
+                self.gen_local_var_decl(ty, name, init_opt)
+            }
             _ => None,
         }
     }
@@ -106,7 +169,12 @@ impl Codegen {
         None
     }
 
-    pub unsafe fn gen_local_var_decl(&mut self, ty: &Type, name: &String, init_opt: &Option<Box<AST>>) -> Option<LLVMValueRef> {
+    pub unsafe fn gen_local_var_decl(
+        &mut self,
+        ty: &Type,
+        name: &String,
+        init_opt: &Option<Box<AST>>,
+    ) -> Option<LLVMValueRef> {
         let func = self.cur_func.unwrap();
         let builder = LLVMCreateBuilderInContext(self.context);
         let entry_bb = LLVMGetEntryBasicBlock(func);
@@ -118,10 +186,19 @@ impl Codegen {
             LLVMPositionBuilderBefore(builder, first_inst);
         }
         let llvm_ty = self.type_to_llvmty(ty);
-        let var = LLVMBuildAlloca(builder, llvm_ty, CString::new(name.as_str()).unwrap().as_ptr());
+        let var = LLVMBuildAlloca(
+            builder,
+            llvm_ty,
+            CString::new(name.as_str()).unwrap().as_ptr(),
+        );
 
-        // TODO: Is it OK not to go back to the function end  
+        self.local_varmap
+            .insert(name.clone(), VarInfo::new(llvm_ty, var));
+
+        // TODO: Is it OK not to go back to the function end?
         //LLVMPositionBuilderAtEnd(builder, entry_bb);
+
+        // TODO: support initialization of variables
 
         Some(var)
     }
@@ -134,7 +211,8 @@ impl Codegen {
     ) -> Option<LLVMValueRef> {
         // TODO: assign
         if let BinaryOps::Assign = op {
-            return self.gen_assign(lhs, rhs);
+            println!("assii");
+            return self.gen_assign(&inside_load(lhs), rhs);
         }
 
         // TODO: type casting
@@ -211,10 +289,36 @@ impl Codegen {
         Some(res)
     }
 
+    pub unsafe fn gen_load(&mut self, var: &AST) -> Option<LLVMValueRef> {
+        // TODO: support other types than AST::Variable
+        match var {
+            AST::Variable(ref name) => {
+                let val = self.gen(var).unwrap();
+                let ret = LLVMBuildLoad(
+                    self.builder,
+                    val,
+                    CString::new("var".to_string()).unwrap().as_ptr(),
+                );
+                //let mut var_info = self.local_varmap.get(&name.clone()).unwrap();
+                //*var_info.llvm_val = *ret;
+                Some(ret)
+            },
+            _ => panic!("Error: AST::Load"),
+        }
+    }
+
+    pub unsafe fn gen_var(&mut self, name: &String) -> Option<LLVMValueRef> {
+        Some(self.local_varmap.get(name).unwrap().llvm_val)
+    }
+
     pub unsafe fn gen_assign(&mut self, lhs: &AST, rhs: &AST) -> Option<LLVMValueRef> {
         let rhs_val = self.gen(rhs).unwrap();
-        // TODO: implement
-        panic!("Assignment is not supported");
+        let dst = self.gen(lhs).unwrap();
+
+        let ret = LLVMBuildStore(self.builder, rhs_val, dst);
+
+        Some(ret)
+        //panic!("Assignment is not supported");
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<LLVMValueRef> {
