@@ -147,6 +147,7 @@ impl Codegen {
     pub unsafe fn gen(&mut self, ast: &AST) -> Option<LLVMValueRef> {
         match &ast {
             AST::Block(ref block) => self.gen_block(block),
+            AST::UnaryOp(ref ast, ref op) => self.gen_unary_op(&**ast, &*op),
             AST::BinaryOp(ref lhs, ref rhs, ref op) => self.gen_binary_op(&**lhs, &**rhs, &*op),
             AST::Int(ref n) => self.make_int(*n as u64, false),
             AST::Return(None) => Some(LLVMBuildRetVoid(self.builder)),
@@ -202,6 +203,14 @@ impl Codegen {
         Some(var)
     }
 
+    pub unsafe fn gen_unary_op(&mut self, ast: &AST, op: &UnaryOps) -> Option<LLVMValueRef> {
+        let res = match op {
+            UnaryOps::Plus => self.gen(ast),
+            _ => panic!("Unsupported unary op"),
+        };
+        res
+    }
+
     pub unsafe fn gen_binary_op(
         &mut self,
         lhs: &AST,
@@ -210,7 +219,6 @@ impl Codegen {
     ) -> Option<LLVMValueRef> {
         // TODO: assign
         if let BinaryOps::Assign = op {
-            println!("assii");
             return self.gen_assign(&inside_load(lhs), rhs);
         }
 
@@ -314,11 +322,9 @@ impl Codegen {
     pub unsafe fn gen_assign(&mut self, lhs: &AST, rhs: &AST) -> Option<LLVMValueRef> {
         let rhs_val = self.gen(rhs).unwrap();
         let dst = self.gen(lhs).unwrap();
-
-        let ret = LLVMBuildStore(self.builder, rhs_val, dst);
-
-        Some(ret)
-        //panic!("Assignment is not supported");
+        LLVMBuildStore(self.builder, rhs_val, dst);
+        let load = LLVMBuildLoad(self.builder, dst, CString::new("load".to_string()).unwrap().as_ptr());
+        Some(load)
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<LLVMValueRef> {
