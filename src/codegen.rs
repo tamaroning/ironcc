@@ -36,7 +36,7 @@ pub struct Codegen {
     module: LLVMModuleRef,
     builder: LLVMBuilderRef,
     cur_func: Option<LLVMValueRef>,
-    local_varmap: HashMap<String, VarInfo>,
+    local_varmap: Vec<HashMap<String, VarInfo>>,
 }
 
 pub unsafe fn inside_load(ast: &AST) -> &AST {
@@ -54,7 +54,7 @@ impl Codegen {
             module: LLVMModuleCreateWithNameInContext(c_mod_name.as_ptr(), LLVMContextCreate()),
             builder: LLVMCreateBuilderInContext(LLVMContextCreate()),
             cur_func: None,
-            local_varmap: HashMap::new(),
+            local_varmap: Vec::new(),
         }
     }
 
@@ -137,13 +137,11 @@ impl Codegen {
 
         self.cur_func = Some(func);
 
+        self.local_varmap.push(HashMap::new());
         // TODO: register arguments as local variables
 
         self.gen(&*body);
-
-        println!("{:?}", self.local_varmap);
-        // reset local variables
-        self.local_varmap = HashMap::new();
+        self.local_varmap.pop();
     }
 
     pub unsafe fn gen(&mut self, ast: &AST) -> Option<LLVMValueRef> {
@@ -163,6 +161,7 @@ impl Codegen {
     }
 
     pub unsafe fn gen_block(&mut self, block: &Vec<AST>) -> Option<LLVMValueRef> {
+        // TODO: support scope
         for ast in block {
             self.gen(ast);
         }
@@ -192,7 +191,7 @@ impl Codegen {
             CString::new(name.as_str()).unwrap().as_ptr(),
         );
 
-        self.local_varmap
+        self.local_varmap.last_mut().unwrap()
             .insert(name.clone(), VarInfo::new(llvm_ty, var));
 
         // TODO: Is it OK not to go back to the function end?
@@ -308,7 +307,8 @@ impl Codegen {
     }
 
     pub unsafe fn gen_var(&mut self, name: &String) -> Option<LLVMValueRef> {
-        Some(self.local_varmap.get(name).unwrap().llvm_val)
+        // TODO: support scope
+        Some(self.local_varmap.last_mut().unwrap().get(name).unwrap().llvm_val)
     }
 
     pub unsafe fn gen_assign(&mut self, lhs: &AST, rhs: &AST) -> Option<LLVMValueRef> {
