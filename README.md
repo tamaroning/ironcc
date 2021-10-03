@@ -1,5 +1,20 @@
 # ironcc
-A toy C compiler written in Rust
+A toy C compiler written in Rust.
+
+ironcc is aiming to suppport C99, and C11.
+
+# Status
+ironcc suppports the following functions:
+
+- function definition
+- local variable declaration
+- return statement
+- assignment
+- types (int and pointer)
+- numerical literal
+- binary operations (+, -, *, /)
+- comparison operations (==, !=, <, >, <=, >=)
+- unary operations (+)
 
 # Syntax
 ```
@@ -58,16 +73,12 @@ postfix = primary ("[" expr "]")*
 primary = "(" expr ")"
         | "sizeof" unary
         | <ident> func-args?
-        | num
-->fun-argsがあればfunc-callとみなす
+        | <num>
 
 func-call = <ident> "(" (assign ("," assign)*)? ")"
 
-num = <num>
-
+<XXX> means token.
 ```
-
-<> means token.
 
 # Todo
 - support arithmetic operations of pointers
