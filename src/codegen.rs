@@ -42,9 +42,8 @@ pub struct Codegen {
     local_varmap: Vec<HashMap<String, VarInfo>>,
 }
 
-#[warn(temporary_cstring_as_ptr)]
-pub unsafe fn cstr(s: &str) -> *const i8 {
-    CString::new(s).unwrap().as_ptr()
+pub unsafe fn cstr(s: &'static str) -> CString {
+    CString::new(s).unwrap()
 }
 
 pub unsafe fn inside_load(ast: &AST) -> &AST {
@@ -72,7 +71,7 @@ impl Codegen {
         match LLVMGetTypeKind(from) {
             llvm::LLVMTypeKind::LLVMPointerTypeKind => match LLVMGetTypeKind(to) {
                 llvm::LLVMTypeKind::LLVMIntegerTypeKind => {
-                    return LLVMBuildPtrToInt(self.builder, val, to, cstr("cast"));
+                    return LLVMBuildPtrToInt(self.builder, val, to, cstr("cast").as_ptr());
                 }
                 _ => panic!(),
             },
@@ -137,8 +136,8 @@ impl Codegen {
 
     pub unsafe fn gen_func_def(&mut self, func_ty: Box<Type>, func_name: String, body: Box<AST>) {
         let func_ty = self.type_to_llvmty(&func_ty);
-        let func = LLVMAddFunction(self.module, cstr(func_name.as_str()), func_ty);
-        let bb_entry = LLVMAppendBasicBlock(func, cstr("entry"));
+        let func = LLVMAddFunction(self.module, CString::new(func_name.as_str()).unwrap().as_ptr(), func_ty);
+        let bb_entry = LLVMAppendBasicBlock(func, cstr("entry").as_ptr());
         LLVMPositionBuilderAtEnd(self.builder, bb_entry);
 
         self.cur_func = Some(func);
@@ -193,7 +192,7 @@ impl Codegen {
             LLVMPositionBuilderBefore(builder, first_inst);
         }
         let llvm_ty = self.type_to_llvmty(ty);
-        let var = LLVMBuildAlloca(builder, llvm_ty, cstr(name.as_str()));
+        let var = LLVMBuildAlloca(builder, llvm_ty, CString::new(name.as_str()).unwrap().as_ptr());
 
         self.local_varmap
             .last_mut()
@@ -217,7 +216,7 @@ impl Codegen {
             UnaryOps::Plus => self.gen(ast),
             UnaryOps::Minus => {
                 let val = self.gen(ast).unwrap().0;
-                let neg = LLVMBuildNeg(self.builder, val, cstr("neg"));
+                let neg = LLVMBuildNeg(self.builder, val, cstr("neg").as_ptr());
                 Some((neg, Some(Type::Int)))
             }
             UnaryOps::Addr => self.gen(inside_load(ast)),
@@ -278,7 +277,7 @@ impl Codegen {
                 self.builder,
                 self.make_int(0, true).unwrap().0,
                 rhs_val,
-                cstr("sub"),
+                cstr("sub").as_ptr(),
             ),
             _ => panic!(),
         }];
@@ -287,7 +286,7 @@ impl Codegen {
             lhs_val,
             numidx.as_mut_slice().as_mut_ptr(),
             1,
-            cstr("add"),
+            cstr("add").as_ptr(),
         );
         Some((ret, Some(ty)))
     }
@@ -300,37 +299,37 @@ impl Codegen {
         op: &BinaryOps,
     ) -> Option<(LLVMValueRef, Option<Type>)> {
         let res = match op {
-            BinaryOps::Add => LLVMBuildAdd(self.builder, *lhs_val, *rhs_val, cstr("add")),
-            BinaryOps::Sub => LLVMBuildSub(self.builder, *lhs_val, *rhs_val, cstr("sub")),
-            BinaryOps::Mul => LLVMBuildMul(self.builder, *lhs_val, *rhs_val, cstr("mul")),
-            BinaryOps::Div => LLVMBuildSDiv(self.builder, *lhs_val, *rhs_val, cstr("sdiv")),
+            BinaryOps::Add => LLVMBuildAdd(self.builder, *lhs_val, *rhs_val, cstr("add").as_ptr()),
+            BinaryOps::Sub => LLVMBuildSub(self.builder, *lhs_val, *rhs_val, cstr("sub").as_ptr()),
+            BinaryOps::Mul => LLVMBuildMul(self.builder, *lhs_val, *rhs_val, cstr("mul").as_ptr()),
+            BinaryOps::Div => LLVMBuildSDiv(self.builder, *lhs_val, *rhs_val, cstr("sdiv").as_ptr()),
             BinaryOps::Eq => LLVMBuildICmp(
                 self.builder,
                 llvm::LLVMIntPredicate::LLVMIntEQ,
                 *lhs_val,
                 *rhs_val,
-                cstr("eql"),
+                cstr("eql").as_ptr(),
             ),
             BinaryOps::Ne => LLVMBuildICmp(
                 self.builder,
                 llvm::LLVMIntPredicate::LLVMIntNE,
                 *lhs_val,
                 *rhs_val,
-                cstr("ne"),
+                cstr("ne").as_ptr(),
             ),
             BinaryOps::Lt => LLVMBuildICmp(
                 self.builder,
                 llvm::LLVMIntPredicate::LLVMIntSLT,
                 *lhs_val,
                 *rhs_val,
-                cstr("lt"),
+                cstr("lt").as_ptr(),
             ),
             BinaryOps::Le => LLVMBuildICmp(
                 self.builder,
                 llvm::LLVMIntPredicate::LLVMIntSLE,
                 *lhs_val,
                 *rhs_val,
-                cstr("le"),
+                cstr("le").as_ptr(),
             ),
 
             _ => panic!("Unsupported bianry op"),
@@ -345,7 +344,7 @@ impl Codegen {
             AST::Variable(ref name) => {
                 let (val, ty) = self.gen(ast).unwrap();
                 let ty = ty.unwrap();
-                let ret = LLVMBuildLoad(self.builder, val, cstr("var"));
+                let ret = LLVMBuildLoad(self.builder, val, cstr("var").as_ptr());
                 match ty {
                     Type::Ptr(origin_ty) => Some((ret, Some(*origin_ty))),
                     _ => panic!(),
@@ -353,7 +352,7 @@ impl Codegen {
             },
             _ => {
                 let (val, ty) = self.gen(ast).unwrap();
-                let ret = LLVMBuildLoad(self.builder, val, cstr("var"));
+                let ret = LLVMBuildLoad(self.builder, val, cstr("var").as_ptr());
                 Some((ret, Some(Type::Ptr(Box::new(ty.unwrap())))))
             },
         }
@@ -376,7 +375,7 @@ impl Codegen {
         let (rhs_val, ty) = self.gen(rhs).unwrap();
         let (dst, dst_ty) = self.gen(lhs).unwrap();
         LLVMBuildStore(self.builder, rhs_val, dst);
-        let load = LLVMBuildLoad(self.builder, dst, cstr("load"));
+        let load = LLVMBuildLoad(self.builder, dst, cstr("load").as_ptr());
         // TODO: ty is OK?
         Some((load, dst_ty))
     }
