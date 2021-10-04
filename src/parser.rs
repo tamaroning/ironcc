@@ -13,7 +13,6 @@ use node::{BinaryOps, AST};
 pub fn run(filepath: String, tokens: Vec<Token>) -> Vec<AST> {
     let mut parser = Parser::new(filepath, tokens);
     let ast = parser.read_program();
-    println!("locals: {:?}", parser.locals);
     ast
 }
 
@@ -21,7 +20,6 @@ pub struct Parser {
     filepath: String,
     pos: usize,
     tokens: Vec<Token>,
-    pub locals: HashMap<String, Type>,
 }
 
 impl Parser {
@@ -30,7 +28,6 @@ impl Parser {
             filepath: path,
             pos: 0,
             tokens: tok,
-            locals: HashMap::new(),
         }
     }
 
@@ -95,7 +92,6 @@ impl Parser {
     }
 
     fn read_func_def(&mut self) -> AST {
-        self.locals = HashMap::new();
         let func_ty = self.read_declspec();
         let (func_ty, func_name) = self.read_declarator(func_ty);
         self.consume_expected("{");
