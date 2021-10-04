@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::fmt::Binary;
-
 use crate::lexer;
 use crate::node;
 use crate::node::UnaryOps;

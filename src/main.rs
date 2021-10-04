@@ -2,7 +2,6 @@ extern crate ironcc;
 use ironcc::codegen;
 use ironcc::lexer;
 use ironcc::parser;
-use ironcc::types;
 use ironcc::version;
 
 use std::env;
@@ -31,5 +30,7 @@ fn main() {
             let mut codegen = codegen::Codegen::new(filepath.clone().as_str());
             codegen.gen_program(nodes);
         }
+
+        
     }
 }
