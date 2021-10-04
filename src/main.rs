@@ -18,17 +18,19 @@ fn main() {
         // tokenize
         let tokens = lexer::run(filepath.clone());
         for tok in &tokens {
-            println!("{:?}", tok);
+            //println!("{:?}", tok);
         }
         // parse
         let nodes = parser::run(filepath.clone(), tokens);
         for node in &nodes {
-            println!("{:?}", node);
+            //println!("{:?}", node);
         }
 
         unsafe {
             let mut codegen = codegen::Codegen::new(filepath.clone().as_str());
             codegen.gen_program(nodes);
+            codegen.dump_module();
+            codegen.write_llvm_bc();
         }
 
         
