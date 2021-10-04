@@ -99,6 +99,14 @@ impl Codegen {
         }
     }
 
+    pub unsafe fn dump_module(&self) {
+        LLVMDumpModule(self.module);
+    }
+
+    pub unsafe fn write_llvm_bc(&mut self) {
+        llvm::bit_writer::LLVMWriteBitcodeToFile(self.module, cstr("a.bc").as_ptr());
+    }
+
     pub unsafe fn gen_program(&mut self, program: Vec<AST>) {
         for top_level in program {
             match top_level {
@@ -110,7 +118,6 @@ impl Codegen {
         }
         // Debug
         LLVMDisposeBuilder(self.builder);
-        LLVMDumpModule(self.module);
         /*
         //JIT exec
         // build engine
@@ -146,7 +153,8 @@ impl Codegen {
         // TODO: register arguments as local variables
 
         self.gen(&*body);
-        println!("{:?}", self.local_varmap.last_mut().unwrap());
+        //LLVMBuildRet(self.builder, self.make_int(0, false).unwrap().0);
+        //println!("{:?}", self.local_varmap.last_mut().unwrap());
         self.local_varmap.pop();
     }
 
@@ -157,6 +165,7 @@ impl Codegen {
             AST::BinaryOp(ref lhs, ref rhs, ref op) => self.gen_binary_op(&**lhs, &**rhs, &*op),
             AST::Int(ref n) => self.make_int(*n as u64, false),
             AST::If(ref cond, ref then, ref els) => self.gen_if(&**cond, &**then, &**els),
+            AST::For(ref init, ref cond, ref step, ref body) => self.gen_for(&**init, &**cond, &**step, &**body),
             AST::Return(None) => Some((LLVMBuildRetVoid(self.builder), None)),
             AST::Return(Some(ref val)) => self.gen_return(val),
             AST::Load(ref expr) => self.gen_load(expr),
@@ -247,9 +256,9 @@ impl Codegen {
         // support double binary
 
         // debug
-        println!("type");
-        println!("l: {:?}", lhs_ty);
-        println!("r: {:?}", rhs_ty);
+        //println!("type");
+        //println!("l: {:?}", lhs_ty);
+        //println!("r: {:?}", rhs_ty);
 
         // TODO: support pointer support
         if matches!(&lhs_ty, Type::Ptr(_)) {
@@ -408,6 +417,23 @@ impl Codegen {
         self.gen(els);
         LLVMBuildBr(self.builder, bb_endif);
         LLVMPositionBuilderAtEnd(self.builder, bb_endif);
+        Some((ptr::null_mut(), None))
+    }
+
+    pub unsafe fn gen_for(&mut self, init: &AST, cond: &AST, step: &AST, body: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
+        self.gen(init);
+        let func = self.cur_func.unwrap();
+        let bb_begin = LLVMAppendBasicBlock(func, cstr("begin").as_ptr());
+        let bb_body = LLVMAppendBasicBlock(func, cstr("body").as_ptr());
+        let bb_end = LLVMAppendBasicBlock(func, cstr("end").as_ptr());
+        LLVMPositionBuilderAtEnd(self.builder, bb_begin);
+        let cond_val = self.gen(cond).unwrap().0;
+        LLVMBuildCondBr(self.builder, cond_val, bb_body, bb_end);
+        LLVMPositionBuilderAtEnd(self.builder, bb_body);
+        self.gen(body);
+        self.gen(step);
+        LLVMBuildBr(self.builder, bb_begin);
+        LLVMPositionBuilderAtEnd(self.builder, bb_end);
         Some((ptr::null_mut(), None))
     }
 
