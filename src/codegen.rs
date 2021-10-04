@@ -221,6 +221,7 @@ impl Codegen {
                 Some((neg, Some(Type::Int)))
             }
             UnaryOps::Addr => self.gen(inside_load(ast)),
+            UnaryOps::Deref => self.gen_load(ast),
             _ => panic!("Unsupported unary op"),
         };
         res
@@ -338,19 +339,23 @@ impl Codegen {
         Some((res, Some(ty)))
     }
 
-    pub unsafe fn gen_load(&mut self, var: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
+    pub unsafe fn gen_load(&mut self, ast: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
         // TODO: support other types than AST::Variable
-        match var {
+        match ast {
             AST::Variable(ref name) => {
-                let (val, ty) = self.gen(var).unwrap();
+                let (val, ty) = self.gen(ast).unwrap();
                 let ty = ty.unwrap();
                 let ret = LLVMBuildLoad(self.builder, val, cstr("var"));
                 match ty {
                     Type::Ptr(origin_ty) => Some((ret, Some(*origin_ty))),
                     _ => panic!(),
                 }
-            }
-            _ => panic!("Error: AST::Load"),
+            },
+            _ => {
+                let (val, ty) = self.gen(ast).unwrap();
+                let ret = LLVMBuildLoad(self.builder, val, cstr("var"));
+                Some((ret, Some(Type::Ptr(Box::new(ty.unwrap())))))
+            },
         }
     }
 
