@@ -146,6 +146,7 @@ impl Codegen {
         // TODO: register arguments as local variables
 
         self.gen(&*body);
+        println!("{:?}", self.local_varmap.last_mut().unwrap());
         self.local_varmap.pop();
     }
 
@@ -360,14 +361,16 @@ impl Codegen {
         match var {
             AST::Variable(ref name) => {
                 let (val, ty) = self.gen(var).unwrap();
+                let ty = ty.unwrap();
                 let ret = LLVMBuildLoad(
                     self.builder,
                     val,
                     CString::new("var".to_string()).unwrap().as_ptr(),
                 );
-                //let mut var_info = self.local_varmap.get(&name.clone()).unwrap();
-                //*var_info.llvm_val = *ret;
-                Some((ret, ty))
+                match ty {
+                    Type::Ptr(origin_ty) => Some((ret, Some(*origin_ty))),
+                    _ => panic!(),
+                }
             }
             _ => panic!("Error: AST::Load"),
         }
@@ -393,7 +396,7 @@ impl Codegen {
             CString::new("load".to_string()).unwrap().as_ptr(),
         );
         // TODO: ty is OK?
-        Some((load, ty))
+        Some((load, dst_ty))
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
