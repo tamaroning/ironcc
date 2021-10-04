@@ -360,11 +360,24 @@ impl Codegen {
 
     pub unsafe fn gen_var(&mut self, name: &String) -> Option<(LLVMValueRef, Option<Type>)> {
         // TODO: support scope
-        let var_info = self.local_varmap.last_mut().unwrap().get(name).unwrap();
-        Some((
-            var_info.llvm_val,
-            Some(Type::Ptr(Box::new(var_info.ty.clone()))),
-        ))
+        if self.local_varmap.is_empty() {
+            panic!();
+        }
+        let mut i = (self.local_varmap.len() - 1) as isize;
+        while i >= 0 {
+            let var_info_opt = self.local_varmap[i as usize].get(name);
+            match var_info_opt {
+                Some(ref var_info) => {
+                    return Some((
+                        var_info.llvm_val,
+                        Some(Type::Ptr(Box::new(var_info.ty.clone()))),
+                    ));
+                }
+                _ => (),
+            }
+            i -= 1;
+        }
+        panic!("local variable not found");
     }
 
     pub unsafe fn gen_assign(
