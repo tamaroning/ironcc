@@ -156,6 +156,7 @@ impl Codegen {
             AST::UnaryOp(ref ast, ref op) => self.gen_unary_op(&**ast, &*op),
             AST::BinaryOp(ref lhs, ref rhs, ref op) => self.gen_binary_op(&**lhs, &**rhs, &*op),
             AST::Int(ref n) => self.make_int(*n as u64, false),
+            AST::If(ref cond, ref then, ref els) => self.gen_if(&**cond, &**then, &**els),
             AST::Return(None) => Some((LLVMBuildRetVoid(self.builder), None)),
             AST::Return(Some(ref val)) => self.gen_return(val),
             AST::Load(ref expr) => self.gen_load(expr),
@@ -391,6 +392,23 @@ impl Codegen {
         let load = LLVMBuildLoad(self.builder, dst, cstr("load").as_ptr());
         // TODO: ty is OK?
         Some((load, dst_ty))
+    }
+
+    pub unsafe fn gen_if(&mut self, cond: &AST, then: &AST, els: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
+        let cond_val = self.gen(cond).unwrap().0;
+        let func = self.cur_func.unwrap();
+        let bb_then = LLVMAppendBasicBlock(func, cstr("then").as_ptr());
+        let bb_else = LLVMAppendBasicBlock(func, cstr("else").as_ptr());
+        let bb_endif = LLVMAppendBasicBlock(func, cstr("endif").as_ptr());
+        LLVMBuildCondBr(self.builder, cond_val, bb_then, bb_else);
+        LLVMPositionBuilderAtEnd(self.builder, bb_then);
+        self.gen(then);
+        LLVMBuildBr(self.builder, bb_endif);
+        LLVMPositionBuilderAtEnd(self.builder, bb_else);
+        self.gen(els);
+        LLVMBuildBr(self.builder, bb_endif);
+        LLVMPositionBuilderAtEnd(self.builder, bb_endif);
+        Some((ptr::null_mut(), None))
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
