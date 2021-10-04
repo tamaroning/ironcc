@@ -11,7 +11,6 @@ ironcc supports the following functions:
 - return statement
 - assignment
 - types (int and pointer)
-- control syntax (if, else, for)
 - numerical literal
 - binary operations (+, -, *, /)
 - comparison operations (==, !=, <, >, <=, >=)
