@@ -426,6 +426,7 @@ impl Codegen {
         let bb_begin = LLVMAppendBasicBlock(func, cstr("begin").as_ptr());
         let bb_body = LLVMAppendBasicBlock(func, cstr("body").as_ptr());
         let bb_end = LLVMAppendBasicBlock(func, cstr("end").as_ptr());
+        LLVMBuildBr(self.builder, bb_begin);
         LLVMPositionBuilderAtEnd(self.builder, bb_begin);
         let cond_val = self.gen(cond).unwrap().0;
         LLVMBuildCondBr(self.builder, cond_val, bb_body, bb_end);
