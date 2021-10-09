@@ -1,7 +1,23 @@
 # ironcc
-A toy C compiler written in Rust.
+A toy C compiler written in Rust which uses LLVM as backend.  
+ironcc is aiming to suppport C99, and C11.  
 
-ironcc is aiming to suppport C99, and C11.
+# Install
+```sh
+$ git clone https://github.com/tamaroning/ironcc.git
+$ cd ironcc
+$ cargo build
+```
+
+# Usage
+```sh
+$ ironcc <file path>
+```
+
+To show the usage and version, run:
+```sh
+$ ironcc
+```
 
 # Status
 ironcc supports the following functions:
