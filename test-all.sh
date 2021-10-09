@@ -18,4 +18,5 @@ assert() {
 
 assert 4 ./test/calc.c
 assert 55 ./test/for.c
+assert 30 ./test/if.c
 echo OK

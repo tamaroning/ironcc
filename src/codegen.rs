@@ -217,7 +217,10 @@ impl Codegen {
         // TODO: Is it OK not to go back to the function end?
         //LLVMPositionBuilderAtEnd(builder, entry_bb);
 
-        // TODO: support initialization of variables
+        // initialize variables
+        if let Some(init) = init_opt {
+            self.gen_assign(&AST::Variable(name.clone()), &init);
+        }
 
         None
     }
