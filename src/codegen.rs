@@ -1,5 +1,4 @@
 extern crate llvm_sys as llvm;
-#[warn(unused_import_braces)]
 use self::llvm::core::*;
 use self::llvm::prelude::*;
 use crate::node;
@@ -44,6 +43,10 @@ pub struct Codegen {
 
 pub unsafe fn cstr(s: &'static str) -> CString {
     CString::new(s).unwrap()
+}
+
+pub unsafe fn is_exist_terminator(builder: LLVMBuilderRef) -> bool {
+    LLVMIsATerminatorInst(LLVMGetLastInstruction(LLVMGetInsertBlock(builder))) != ptr::null_mut()
 }
 
 pub unsafe fn inside_load(ast: &AST) -> &AST {
@@ -153,7 +156,9 @@ impl Codegen {
         // TODO: register arguments as local variables
 
         self.gen(&*body);
-        //LLVMBuildRet(self.builder, self.make_int(0, false).unwrap().0);
+        if !is_exist_terminator(self.builder) {
+            LLVMBuildRet(self.builder, self.make_int(0, false).unwrap().0);
+        }
         //println!("{:?}", self.local_varmap.last_mut().unwrap());
         self.local_varmap.pop();
     }
@@ -412,12 +417,16 @@ impl Codegen {
         LLVMBuildCondBr(self.builder, cond_val, bb_then, bb_else);
         LLVMPositionBuilderAtEnd(self.builder, bb_then);
         self.gen(then);
-        LLVMBuildBr(self.builder, bb_endif);
+        if !is_exist_terminator(self.builder) {
+            LLVMBuildBr(self.builder, bb_endif);
+        }
         LLVMPositionBuilderAtEnd(self.builder, bb_else);
         self.gen(els);
-        LLVMBuildBr(self.builder, bb_endif);
+        if !is_exist_terminator(self.builder) {
+            LLVMBuildBr(self.builder, bb_endif);
+        }
         LLVMPositionBuilderAtEnd(self.builder, bb_endif);
-        Some((ptr::null_mut(), None))
+        None
     }
 
     pub unsafe fn gen_for(&mut self, init: &AST, cond: &AST, step: &AST, body: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
@@ -425,6 +434,7 @@ impl Codegen {
         let func = self.cur_func.unwrap();
         let bb_begin = LLVMAppendBasicBlock(func, cstr("begin").as_ptr());
         let bb_body = LLVMAppendBasicBlock(func, cstr("body").as_ptr());
+        let bb_update = LLVMAppendBasicBlock(func, cstr("update").as_ptr());
         let bb_end = LLVMAppendBasicBlock(func, cstr("end").as_ptr());
         LLVMBuildBr(self.builder, bb_begin);
         LLVMPositionBuilderAtEnd(self.builder, bb_begin);
@@ -432,16 +442,22 @@ impl Codegen {
         LLVMBuildCondBr(self.builder, cond_val, bb_body, bb_end);
         LLVMPositionBuilderAtEnd(self.builder, bb_body);
         self.gen(body);
+        if !is_exist_terminator(self.builder) {
+            LLVMBuildBr(self.builder, bb_update);
+        }
+        LLVMPositionBuilderAtEnd(self.builder, bb_update);
         self.gen(step);
-        LLVMBuildBr(self.builder, bb_begin);
+        if !is_exist_terminator(self.builder) {
+            LLVMBuildBr(self.builder, bb_begin);
+        }
         LLVMPositionBuilderAtEnd(self.builder, bb_end);
-        Some((ptr::null_mut(), None))
+        None
     }
 
     pub unsafe fn gen_return(&mut self, ast: &AST) -> Option<(LLVMValueRef, Option<Type>)> {
         let ret_val = self.gen(ast);
-        let ret = LLVMBuildRet(self.builder, ret_val.unwrap().0);
-        Some((ret, None))
+        LLVMBuildRet(self.builder, ret_val.unwrap().0);
+        None
     }
 
     pub unsafe fn make_int(
